@@ -1,0 +1,2980 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Siskore</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-0:#1e1f22;--bg-1:#232428;--bg-2:#2b2d31;--bg-3:#313338;--bg-4:#383a40;--bg-5:#404249;
+  --border:#1f2023;--border-2:#3f4147;
+  --text:#f2f3f5;--text-2:#dbdee1;--text-3:#b5bac1;--text-4:#949ba4;--text-5:#6d6f78;
+  --accent:#5865f2;--accent-h:#4752c4;--green:#23a55a;--yellow:#f0b232;--red:#f23f43;
+  --mono:ui-monospace,'SF Mono',Menlo,monospace;
+  /* Motion */
+  --t-fast:.15s cubic-bezier(.2,.9,.3,1.1);
+  --t-base:.22s cubic-bezier(.2,.9,.3,1.1);
+  --t-slow:.35s cubic-bezier(.2,.9,.3,1.1);
+  --t-spring:.4s cubic-bezier(.34,1.56,.64,1);
+  --t-ease:.25s cubic-bezier(.4,0,.2,1);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg-3);color:var(--text-2);
+  font-family:'gg sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  font-size:14px;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;font-size:inherit;
+  transition:background-color var(--t-fast),color var(--t-fast),transform var(--t-fast),box-shadow var(--t-fast),opacity var(--t-fast)}
+input,textarea,select{font-family:inherit;outline:none;border:none;font-size:inherit;
+  transition:border-color var(--t-fast),background-color var(--t-fast),box-shadow var(--t-fast)}
+a{color:#00a8fc;text-decoration:none;cursor:pointer;transition:color var(--t-fast)}
+a:hover{text-decoration:underline}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#1a1b1e;border-radius:4px;transition:background var(--t-fast)}
+::-webkit-scrollbar-thumb:hover{background:#111214}
+svg{display:block;flex-shrink:0}
+
+/* ============ SCROLL REVEAL ============ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+@keyframes slideInLeft{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+@keyframes slideInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+
+/* ============ AUTH ============ */
+#authScreen{position:fixed;inset:0;z-index:600;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse 80% 60% at 15% 10%,rgba(88,101,242,.18),transparent 60%),
+    radial-gradient(ellipse 70% 60% at 85% 90%,rgba(0,168,252,.12),transparent 60%),#1e1f22;
+  padding:20px;overflow:auto;transition:opacity var(--t-base),visibility var(--t-base)}
+#authScreen.hide{display:none;opacity:0;visibility:hidden;pointer-events:none}
+.auth-card{background:#313338;border-radius:8px;padding:32px;width:100%;max-width:480px;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);animation:pop .3s cubic-bezier(.2,.9,.3,1.1)}
+.auth-card h2{font-size:24px;font-weight:600;color:#f2f3f5;text-align:center;margin-bottom:8px;
+  animation:fadeUp .4s ease both;animation-delay:.05s}
+.auth-card .sub{font-size:15px;color:var(--text-4);text-align:center;margin-bottom:24px;line-height:1.4;
+  animation:fadeUp .4s ease both;animation-delay:.1s}
+.auth-card label{display:block;font-size:12px;font-weight:700;color:var(--text-3);
+  text-transform:uppercase;margin-bottom:8px;letter-spacing:.02em;animation:fadeUp .4s ease both}
+.auth-card input{width:100%;background:#1e1f22;color:var(--text);padding:10px 12px;border-radius:4px;
+  font-size:15px;border:1px solid transparent;margin-bottom:20px}
+.auth-card input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(88,101,242,.25);
+  background:#1a1b1e;transform:translateY(-1px)}
+.auth-card .primary{width:100%;background:var(--accent);color:#fff;padding:11px;border-radius:4px;
+  font-size:15px;font-weight:500;margin-bottom:8px;position:relative;overflow:hidden}
+.auth-card .primary:hover{background:var(--accent-h);transform:translateY(-1px);
+  box-shadow:0 6px 20px rgba(88,101,242,.4)}
+.auth-card .primary:active{transform:translateY(0) scale(.98)}
+.auth-card .switch{text-align:center;font-size:14px;color:var(--text-4);margin-top:8px}
+.err-text{color:var(--red);font-size:13px;margin-bottom:8px;min-height:16px;
+  transition:opacity var(--t-fast),transform var(--t-fast)}
+.err-text:not(:empty){animation:shake .3s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.code-inputs{display:flex;gap:8px;justify-content:center;margin-bottom:20px}
+.code-inputs input{width:56px!important;height:60px;text-align:center;font-size:24px;font-weight:600;
+  margin-bottom:0!important;padding:0!important;font-family:var(--mono);
+  transition:transform var(--t-base),border-color var(--t-fast),box-shadow var(--t-fast)}
+.code-inputs input:focus{transform:translateY(-3px) scale(1.05)}
+.lang-switch{display:flex;gap:6px;justify-content:center;margin-top:20px;padding-top:16px;border-top:1px solid #3f4147}
+.lang-switch button{padding:6px 12px;border-radius:4px;font-size:12px;font-weight:600;
+  color:var(--text-4);background:#2b2d31;border:1px solid #3f4147}
+.lang-switch button.active{background:var(--accent);color:#fff;border-color:transparent}
+.lang-switch button:hover:not(.active){color:var(--text);transform:translateY(-1px)}
+
+/* ============ TOAST ============ */
+#toast{position:fixed;top:20px;right:20px;z-index:1000;display:flex;flex-direction:column;gap:8px;max-width:380px}
+.toast{background:#1e1f22;color:var(--text);padding:12px 16px;border-radius:8px;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);font-size:14px;border-left:3px solid var(--accent);
+  animation:toastIn .35s cubic-bezier(.34,1.56,.64,1);will-change:transform}
+.toast.success{border-left-color:var(--green)}
+.toast.error{border-left-color:var(--red)}
+.toast .t-title{font-weight:600;font-size:14px;margin-bottom:2px}
+.toast .t-body{font-size:13px;color:var(--text-4);line-height:1.4;word-break:break-word}
+@keyframes toastIn{from{opacity:0;transform:translateX(120%) scale(.9)}to{opacity:1;transform:none}}
+
+/* ============ APP ============ */
+#app{display:flex;height:100vh;width:100vw}
+#app.hide{display:none}
+#app:not(.hide){animation:fadeIn .3s ease}
+
+.rail{width:72px;background:var(--bg-0);display:flex;flex-direction:column;align-items:center;
+  padding:12px 0 0;gap:8px;flex-shrink:0;overflow-y:auto;overflow-x:hidden}
+.rail::-webkit-scrollbar{display:none}
+.rail-item{width:48px;height:48px;border-radius:16px;background:var(--bg-2);
+  display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--text-4);
+  transition:border-radius var(--t-base),background-color var(--t-base),color var(--t-base),transform var(--t-spring),box-shadow var(--t-base);
+  position:relative;flex-shrink:0;overflow:hidden;cursor:pointer;font-weight:600;will-change:transform}
+.rail-item img{width:100%;height:100%;object-fit:cover;border-radius:inherit;
+  transition:transform var(--t-slow)}
+.rail-item:hover img{transform:scale(1.06)}
+.rail-item:hover{border-radius:14px;background:var(--accent);color:#fff;transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(88,101,242,.4)}
+.rail-item.active{border-radius:14px;background:var(--accent);color:#fff}
+.rail-item.active::before{content:'';position:absolute;left:-14px;top:50%;transform:translateY(-50%);
+  width:4px;height:36px;background:#fff;border-radius:0 4px 4px 0;
+  animation:pillGrow .35s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pillGrow{from{height:0;opacity:0}to{height:36px;opacity:1}}
+.rail-sep{width:32px;height:2px;background:#2b2d31;border-radius:1px;flex-shrink:0;margin:2px 0}
+.rail-add{color:var(--green);font-size:24px;font-weight:300;line-height:1}
+.rail-add:hover{background:var(--green)!important;color:#fff!important}
+
+.sidebar{width:240px;flex-shrink:0;background:var(--bg-2);display:flex;flex-direction:column;
+  transition:width var(--t-base)}
+.sidebar-top{padding:8px 10px}
+.sidebar-search-btn{width:100%;background:#1e1f22;color:var(--text-4);padding:7px 10px;
+  border-radius:4px;font-size:13px;text-align:left;font-weight:400;cursor:pointer}
+.sidebar-search-btn:hover{color:var(--text-3);background:#18191c;transform:translateY(-1px)}
+.sidebar-nav{padding:0 8px 8px}
+.nav-item{display:flex;align-items:center;gap:12px;padding:7px 8px;border-radius:4px;
+  cursor:pointer;font-size:14.5px;font-weight:500;color:var(--text-4);margin-bottom:1px}
+.nav-item:hover{background:#35373c;color:var(--text-2);transform:translateX(2px)}
+.nav-item.active{background:#404249;color:#fff}
+.nav-item .ico{width:20px;text-align:center;display:flex;align-items:center;justify-content:center;
+  transition:transform var(--t-spring)}
+.nav-item:hover .ico{transform:scale(1.15)}
+.sidebar-dms{flex:1;display:flex;flex-direction:column;min-height:0;padding:8px 8px 0;overflow:hidden}
+.dms-header{display:flex;align-items:center;justify-content:space-between;padding:8px 8px 4px;
+  font-size:11px;font-weight:700;color:var(--text-4);text-transform:uppercase;letter-spacing:.02em}
+.dms-header .add-btn{color:var(--text-4);font-size:16px;font-weight:400;padding:0 4px;line-height:1;cursor:pointer}
+.dms-header .add-btn:hover{color:var(--text);transform:rotate(90deg)}
+.dm-list{flex:1;overflow-y:auto;overflow-x:hidden;padding-right:2px}
+.dm{display:flex;align-items:center;gap:12px;padding:6px 8px;border-radius:4px;cursor:pointer;
+  position:relative;margin-bottom:1px;animation:slideInLeft .3s ease both;will-change:transform}
+.dm:hover{background:#35373c;transform:translateX(3px)}
+.dm.active{background:#404249}
+.dm-avatar{width:32px;height:32px;border-radius:50%;flex-shrink:0;position:relative;
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;overflow:hidden;
+  transition:transform var(--t-spring)}
+.dm:hover .dm-avatar{transform:scale(1.08)}
+.dm-avatar img{width:100%;height:100%;object-fit:cover}
+.dm-avatar .status-dot{position:absolute;right:-2px;bottom:-2px;width:12px;height:12px;border-radius:50%;
+  border:3px solid var(--bg-2);background:#80848e;transition:border-color var(--t-fast),background var(--t-fast)}
+.dm.active .dm-avatar .status-dot{border-color:#404249}
+.dm:hover .dm-avatar .status-dot{border-color:#35373c}
+.status-dot.online{background:var(--green);box-shadow:0 0 8px rgba(35,165,90,.6)}
+.status-dot.idle{background:var(--yellow)}
+.status-dot.dnd{background:var(--red)}
+.status-dot.offline{background:#80848e}
+.dm-info{flex:1;min-width:0}
+.dm-name{font-size:14px;font-weight:500;color:var(--text-4);white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;line-height:1.2;transition:color var(--t-fast)}
+.dm.active .dm-name,.dm:hover .dm-name{color:var(--text-2)}
+.dm-sub{font-size:11.5px;color:var(--text-5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  line-height:1.3;margin-top:1px;transition:color var(--t-fast)}
+.dm-sub.online-text{color:var(--green)}
+
+.user-panel{height:52px;background:#232428;display:flex;align-items:center;gap:8px;
+  padding:0 8px;flex-shrink:0;position:relative}
+.user-panel .avatar-wrap{position:relative;cursor:pointer;flex-shrink:0;
+  transition:transform var(--t-spring)}
+.user-panel .avatar-wrap:hover{transform:scale(1.08)}
+.user-panel .avatar-wrap .dm-avatar{width:32px;height:32px}
+.user-panel-info{flex:1;min-width:0;cursor:pointer;padding:2px 4px;border-radius:3px;
+  transition:background var(--t-fast)}
+.user-panel-info:hover{background:#35373c}
+.user-panel-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;line-height:1.2}
+.user-panel-tag{font-size:11px;color:var(--text-4);line-height:1.3}
+.user-panel .icon-btn{width:32px;height:32px;border-radius:4px;display:flex;align-items:center;
+  justify-content:center;color:var(--text-4);position:relative;transition:background var(--t-fast),color var(--t-fast),transform var(--t-spring)}
+.user-panel .icon-btn:hover{background:#35373c;color:var(--text);transform:scale(1.1)}
+.user-panel .icon-btn svg{width:18px;height:18px}
+.user-panel .icon-btn.muted{color:var(--red)}
+.user-panel .icon-btn.muted::after{content:'';position:absolute;width:22px;height:2px;
+  background:var(--red);transform:rotate(-45deg);border-radius:2px;
+  animation:slashIn .25s cubic-bezier(.34,1.56,.64,1)}
+@keyframes slashIn{from{width:0}to{width:22px}}
+
+/* ============ MAIN ============ */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg-3)}
+.main-header{height:48px;display:flex;align-items:center;gap:8px;padding:0 16px;
+  border-bottom:1px solid var(--border);flex-shrink:0}
+.main-tabs{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.main-tab{padding:4px 8px;font-size:14px;font-weight:500;color:var(--text-4);border-radius:4px;
+  cursor:pointer;display:flex;align-items:center;gap:6px;
+  transition:background var(--t-fast),color var(--t-fast),transform var(--t-fast)}
+.main-tab:hover{color:var(--text-2);background:#35373c;transform:translateY(-1px)}
+.main-tab.active{background:#404249;color:#fff;animation:tabPop .2s ease}
+@keyframes tabPop{from{transform:scale(.96)}to{transform:scale(1)}}
+.main-tab.primary{background:var(--accent);color:#fff;font-weight:500;margin-left:8px}
+.main-tab.primary:hover{background:var(--accent-h);transform:translateY(-1px);box-shadow:0 4px 12px rgba(88,101,242,.35)}
+.main-tab.primary:active{transform:translateY(0) scale(.98)}
+.main-tab.primary .plus{font-size:16px;font-weight:400;line-height:1}
+.main-tab-sep{color:var(--text-5);padding:0 2px;user-select:none}
+.main-header .header-icon-btn{width:32px;height:32px;border-radius:4px;display:flex;align-items:center;
+  justify-content:center;color:var(--text-4);margin-left:auto}
+.main-header .header-icon-btn:hover{background:#35373c;color:var(--text);transform:scale(1.08)}
+
+.friends-content{flex:1;overflow-y:auto;padding:16px 24px}
+.search-bar{position:relative;margin-bottom:16px}
+.search-bar input{width:100%;background:#1e1f22;color:var(--text);padding:9px 12px 9px 34px;
+  border-radius:4px;font-size:14px}
+.search-bar input:focus{background:#1a1b1e;box-shadow:0 0 0 2px rgba(88,101,242,.25);transform:translateY(-1px)}
+.search-bar input::placeholder{color:var(--text-5)}
+.search-bar::before{content:'';position:absolute;left:11px;top:50%;transform:translateY(-50%);
+  width:16px;height:16px;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236d6f78' stroke-width='2' stroke-linecap='round'><circle cx='11' cy='11' r='7'/><path d='m21 21-4.3-4.3'/></svg>");
+  background-size:contain;background-repeat:no-repeat;pointer-events:none}
+
+.friends-section-title{font-size:12px;font-weight:600;color:var(--text-4);
+  padding:12px 0 6px;letter-spacing:.01em;animation:fadeUp .3s ease both}
+.friend-row{display:flex;align-items:center;gap:14px;padding:10px 8px;border-radius:8px;
+  cursor:pointer;margin-bottom:2px;border-top:1px solid transparent;
+  animation:fadeUp .4s ease both;will-change:transform}
+.friend-row:hover{background:#35373c}
+.friend-row + .friend-row{border-top:1px solid #2e3035;border-radius:0;margin-top:0;padding-top:14px}
+.friend-row + .friend-row:hover{border-radius:8px;border-top-color:transparent}
+.friend-row .avatar{width:40px;height:40px;border-radius:50%;flex-shrink:0;position:relative;
+  display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#fff;overflow:hidden;
+  transition:transform var(--t-spring),box-shadow var(--t-base)}
+.friend-row:hover .avatar{transform:scale(1.08);box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.friend-row .avatar img{width:100%;height:100%;object-fit:cover}
+.friend-row .avatar .status-dot{position:absolute;right:-2px;bottom:-2px;width:14px;height:14px;
+  border-radius:50%;border:3px solid var(--bg-3);background:#80848e;transition:border-color var(--t-fast)}
+.friend-row:hover .avatar .status-dot{border-color:#35373c}
+.friend-info{flex:1;min-width:0}
+.friend-name{font-size:15px;font-weight:600;color:var(--text);line-height:1.2;
+  display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.friend-name .handle{font-size:12px;color:var(--text-4);font-weight:400;font-family:var(--mono)}
+.friend-status{font-size:13px;color:var(--text-4);line-height:1.4;margin-top:1px}
+.friend-actions{display:flex;gap:6px;opacity:0;transform:translateX(8px);
+  transition:opacity var(--t-base),transform var(--t-base)}
+.friend-row:hover .friend-actions{opacity:1;transform:none}
+.friend-action-btn{width:36px;height:36px;border-radius:50%;background:#2b2d31;display:flex;
+  align-items:center;justify-content:center;color:var(--text-2);cursor:pointer}
+.friend-action-btn:hover{background:#3f4147;color:#fff;transform:scale(1.1) translateY(-1px);
+  box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.friend-action-btn:active{transform:scale(.95)}
+.friend-action-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:60px 20px;text-align:center;color:var(--text-4);gap:14px;animation:fadeUp .5s ease both}
+.empty-state .big{font-size:52px;opacity:.35;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.empty-state .title{font-size:15px;font-weight:600;color:var(--text-3)}
+.empty-state .hint{font-size:13px;color:var(--text-5);max-width:340px;line-height:1.5}
+
+/* ============ RIGHT PANEL ============ */
+.right-panel{width:340px;flex-shrink:0;background:var(--bg-2);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;animation:slideInRight .35s ease}
+.right-header{height:48px;display:flex;align-items:center;padding:0 16px;font-size:16px;font-weight:600;
+  color:var(--text);border-bottom:1px solid var(--border);flex-shrink:0}
+.right-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px 24px;text-align:center;gap:14px;animation:fadeUp .5s ease both}
+.right-empty .icon{width:64px;height:64px;border-radius:50%;background:#232428;display:flex;
+  align-items:center;justify-content:center;color:var(--text-5);opacity:.6;
+  transition:transform var(--t-slow),opacity var(--t-base)}
+.right-empty:hover .icon{transform:scale(1.08) rotate(8deg);opacity:.85}
+.right-empty .title{font-size:15px;font-weight:600;color:var(--text-3)}
+.right-empty .desc{font-size:13px;color:var(--text-5);line-height:1.55;max-width:280px}
+
+/* ============ CHAT ============ */
+.chat-view{flex:1;display:flex;flex-direction:column;min-height:0;animation:fadeIn .25s ease}
+.chat-head{height:48px;display:flex;align-items:center;gap:10px;padding:0 16px;
+  border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg-3)}
+.chat-head .avatar{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0;overflow:hidden;
+  transition:transform var(--t-spring)}
+.chat-head > div[data-profile]:hover .avatar{transform:scale(1.15)}
+.chat-head .avatar img{width:100%;height:100%;object-fit:cover}
+.chat-head .name{font-weight:600;font-size:15px;color:var(--text);display:flex;align-items:baseline;gap:8px}
+.chat-head .handle{font-size:12px;color:var(--text-4);font-weight:400;font-family:var(--mono)}
+.chat-head .sub{font-size:12px;color:var(--text-4);margin-top:1px}
+.chat-head .head-actions{margin-left:auto;display:flex;gap:6px;align-items:center}
+.chat-head .head-actions button{width:36px;height:36px;border-radius:4px;display:flex;align-items:center;
+  justify-content:center;color:var(--text-4);transition:background var(--t-fast),color var(--t-fast),transform var(--t-spring)}
+.chat-head .head-actions button:hover{background:#35373c;color:var(--text);transform:scale(1.08)}
+.chat-head .head-actions button:active{transform:scale(.92)}
+
+.messages{flex:1;overflow-y:auto;padding:16px 0 8px;scroll-behavior:smooth}
+.msg{display:flex;gap:14px;padding:2px 20px;position:relative;
+  animation:fadeUp .35s cubic-bezier(.2,.9,.3,1.1) both;will-change:opacity,transform}
+.msg:hover{background:rgba(0,0,0,.05)}
+.msg.group-start{margin-top:16px}
+.msg .av-slot{width:40px;flex-shrink:0;display:flex;justify-content:center;cursor:pointer;padding-top:2px;
+  transition:transform var(--t-spring)}
+.msg .av-slot:hover{transform:scale(1.12)}
+.msg-body{flex:1;min-width:0}
+.msg-head{display:flex;align-items:baseline;gap:8px;margin-bottom:2px;flex-wrap:wrap}
+.msg-author{font-weight:600;font-size:15px;color:var(--text);cursor:pointer}
+.msg-author:hover{text-decoration:underline}
+.msg-handle{font-size:11px;color:var(--text-5);font-family:var(--mono)}
+.msg-time{font-size:11px;color:var(--text-5);font-family:var(--mono)}
+.msg-text{font-size:15px;line-height:1.5;color:var(--text-2);word-wrap:break-word;white-space:pre-wrap}
+.sys-msg{color:var(--text-4);font-size:13px;padding:6px 20px 6px 74px;font-style:italic;
+  animation:fadeUp .35s ease both}
+
+.composer{padding:0 20px 22px}
+.composer-inner{background:var(--bg-4);border-radius:8px;display:flex;align-items:flex-end;
+  padding:0 14px;min-height:44px;transition:background var(--t-fast),box-shadow var(--t-base),transform var(--t-fast)}
+.composer-inner:focus-within{background:#40434a;box-shadow:0 0 0 1px rgba(88,101,242,.5),0 4px 20px rgba(88,101,242,.15)}
+.composer textarea{flex:1;background:transparent;color:var(--text);font-size:15px;resize:none;
+  padding:11px 0;max-height:200px;line-height:1.4;font-family:inherit;
+  transition:height .15s ease}
+.composer textarea::placeholder{color:var(--text-5)}
+.send-btn{color:var(--accent);font-size:16px;padding:10px 0 10px 10px;opacity:0;color:var(--text-4);
+  transform:translateX(-6px) scale(.85);
+  transition:opacity var(--t-base),transform var(--t-spring),color var(--t-fast)}
+.send-btn.show{opacity:1;transform:none}
+.send-btn:hover{color:var(--accent);transform:scale(1.1)}
+.send-btn:active{transform:scale(.9)}
+
+/* ============ PROFILE EDITOR ============ */
+.pe-overlay{position:fixed;inset:0;z-index:400;background:var(--bg-3);display:none;flex-direction:column;
+  opacity:0;visibility:hidden;
+  transition:opacity var(--t-base),visibility var(--t-base)}
+.pe-overlay.show{display:flex;opacity:1;visibility:visible;animation:fadeIn .3s ease}
+.pe-topbar{height:60px;flex-shrink:0;display:flex;align-items:center;padding:0 32px;
+  border-bottom:1px solid var(--border);background:var(--bg-2);animation:slideInUp .3s ease both}
+.pe-topbar .title{font-size:16px;font-weight:600;color:var(--text);flex:1}
+.pe-btn{padding:8px 20px;border-radius:4px;font-size:14px;font-weight:500;
+  background:transparent;color:var(--text-2);cursor:pointer;border:none}
+.pe-btn:hover{background:#35373c;transform:translateY(-1px)}
+.pe-btn:active{transform:translateY(0) scale(.98)}
+.pe-btn.primary{background:var(--accent);color:#fff}
+.pe-btn.primary:hover{background:var(--accent-h);box-shadow:0 4px 14px rgba(88,101,242,.4)}
+
+.pe-layout{flex:1;display:grid;grid-template-columns:220px minmax(0,1fr) 420px;overflow:hidden}
+@media(max-width:1200px){.pe-layout{grid-template-columns:200px 1fr}.pe-side-right{display:none}}
+@media(max-width:800px){.pe-layout{grid-template-columns:1fr}.pe-side-left{display:none}}
+
+.pe-side-left{background:var(--bg-2);border-right:1px solid var(--border);padding:20px 12px;overflow-y:auto}
+.pe-cat{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:4px;
+  cursor:pointer;font-size:14px;font-weight:500;color:var(--text-4);margin-bottom:2px;
+  animation:slideInLeft .35s ease both;
+  transition:background var(--t-fast),color var(--t-fast),transform var(--t-fast),padding-left var(--t-base)}
+.pe-cat:hover{background:#35373c;color:var(--text-2);padding-left:16px}
+.pe-cat.active{background:#404249;color:#fff}
+.pe-cat .ico{width:18px;text-align:center;display:flex;align-items:center;justify-content:center;
+  transition:transform var(--t-spring)}
+.pe-cat:hover .ico{transform:scale(1.2)}
+
+.pe-side-center{background:var(--bg-3);display:flex;flex-direction:column;
+  align-items:center;padding:40px 24px;overflow-y:auto}
+.pe-preview-label{font-size:11px;font-weight:700;text-transform:uppercase;
+  color:var(--text-5);letter-spacing:.15em;margin-bottom:20px;animation:fadeUp .3s ease both}
+.pe-card{width:100%;max-width:460px;background:var(--bg-1);border-radius:12px;overflow:hidden;
+  box-shadow:0 8px 32px rgba(0,0,0,.35);
+  animation:scaleIn .4s cubic-bezier(.2,.9,.3,1.1) both;
+  transition:transform var(--t-base),box-shadow var(--t-base)}
+.pe-card:hover{transform:translateY(-3px);box-shadow:0 14px 40px rgba(0,0,0,.45)}
+.pe-card-banner{height:120px;position:relative;background:#5865f2;
+  background-size:cover;background-position:center;overflow:hidden;
+  transition:background var(--t-base)}
+.pe-card-banner .pe-bg-anim{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.pe-card-body{padding:0 20px 24px;position:relative}
+.pe-card-avatar{margin-top:-52px;margin-bottom:14px;display:inline-flex;position:relative;z-index:2;
+  transition:transform var(--t-spring)}
+.pe-card-avatar:hover{transform:scale(1.08) translateY(-3px)}
+.pe-card-name{font-size:22px;font-weight:700;color:var(--text);letter-spacing:-.01em;line-height:1.2;
+  transition:color var(--t-fast)}
+.pe-card-handle{font-size:13px;color:var(--text-4);font-family:var(--mono);margin-top:4px;display:block}
+.pe-card-pron{font-size:12px;color:var(--text-4);margin-top:2px}
+.pe-card-actions{display:flex;gap:8px;margin-top:16px;align-items:center}
+.pe-card-btn{background:var(--accent);color:#fff;padding:8px 18px;border-radius:4px;
+  font-size:13px;font-weight:500}
+.pe-card-btn:hover{background:var(--accent-h);transform:translateY(-1px);box-shadow:0 4px 12px rgba(88,101,242,.4)}
+.pe-card-icon-btn{width:36px;height:36px;border-radius:50%;background:#3f4147;display:flex;
+  align-items:center;justify-content:center;color:var(--text-2);cursor:pointer}
+.pe-card-icon-btn:hover{background:#4e5058;color:#fff;transform:scale(1.1)}
+.pe-card-block{margin-top:18px;padding-top:18px;border-top:1px solid #3f4147;animation:fadeUp .3s ease both}
+.pe-card-block-title{font-size:11px;font-weight:700;text-transform:uppercase;
+  color:var(--text-4);letter-spacing:.02em;margin-bottom:10px}
+.pe-card-block-text{font-size:14px;color:var(--text-3);line-height:1.5;white-space:pre-wrap}
+
+.pe-side-right{background:var(--bg-2);border-left:1px solid var(--border);padding:24px;overflow-y:auto;
+  animation:slideInRight .4s ease both}
+.pe-panel-title{font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px;animation:fadeUp .3s ease both}
+.pe-panel-desc{font-size:13px;color:var(--text-4);margin-bottom:24px;line-height:1.5;animation:fadeUp .3s ease both;animation-delay:.03s}
+
+.pe-field{margin-bottom:20px;animation:fadeUp .35s ease both}
+.pe-field:nth-child(1){animation-delay:.04s}
+.pe-field:nth-child(2){animation-delay:.08s}
+.pe-field:nth-child(3){animation-delay:.12s}
+.pe-field:nth-child(4){animation-delay:.16s}
+.pe-field:nth-child(5){animation-delay:.2s}
+.pe-field-label{display:block;font-size:12px;font-weight:700;color:var(--text-3);
+  text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px}
+.pe-input,.pe-textarea{width:100%;background:var(--bg-0);color:var(--text-2);
+  padding:10px 12px;border-radius:4px;font-size:14px;border:1px solid transparent;font-family:inherit}
+.pe-input:focus,.pe-textarea:focus{border-color:var(--accent);background:#1a1b1e;
+  box-shadow:0 0 0 3px rgba(88,101,242,.18);transform:translateY(-1px)}
+.pe-textarea{resize:vertical;min-height:80px}
+.pe-color-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pe-color{width:100%;height:38px;padding:3px;cursor:pointer;border-radius:4px;background:var(--bg-0);
+  border:1px solid #1e1f22;transition:transform var(--t-spring),border-color var(--t-fast)}
+.pe-color:hover{transform:scale(1.03);border-color:var(--accent)}
+.pe-hint{font-size:11px;color:var(--text-5);margin-top:6px;line-height:1.4}
+
+/* Upload tile */
+.pe-upload{width:100%;padding:20px;border:2px dashed #3f4147;border-radius:8px;text-align:center;
+  cursor:pointer;background:var(--bg-0);
+  transition:border-color var(--t-base),background var(--t-fast),transform var(--t-spring)}
+.pe-upload:hover{border-color:var(--accent);background:#1a1b1e;transform:translateY(-2px)}
+.pe-upload:active{transform:translateY(0) scale(.99)}
+.pe-upload.drag{border-color:var(--accent);background:rgba(88,101,242,.1);transform:scale(1.02)}
+.pe-upload .up-ico{font-size:28px;margin-bottom:8px;opacity:.6;transition:transform var(--t-spring),opacity var(--t-fast)}
+.pe-upload:hover .up-ico{transform:scale(1.15) translateY(-3px);opacity:1}
+.pe-upload .up-title{font-size:13px;font-weight:600;color:var(--text-2);margin-bottom:3px}
+.pe-upload .up-hint{font-size:11px;color:var(--text-5)}
+.pe-upload-preview{width:100%;aspect-ratio:1;border-radius:8px;background:#1e1f22;overflow:hidden;
+  position:relative;margin-bottom:10px;border:1px solid #3f4147;
+  animation:scaleIn .35s cubic-bezier(.2,.9,.3,1.1) both;
+  transition:border-color var(--t-base),box-shadow var(--t-base)}
+.pe-upload-preview:hover{border-color:var(--accent);box-shadow:0 0 0 3px rgba(88,101,242,.15)}
+.pe-upload-preview img{width:100%;height:100%;object-fit:cover;display:block;transition:transform var(--t-slow)}
+.pe-upload-preview:hover img{transform:scale(1.05)}
+.pe-upload-preview.banner{aspect-ratio:2.5/1}
+.pe-upload-preview .ovl{position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.75),transparent 50%);
+  display:flex;align-items:flex-end;justify-content:center;padding:8px;opacity:0;
+  transition:opacity var(--t-base)}
+.pe-upload-preview:hover .ovl{opacity:1}
+.pe-upload-preview .ovl button{background:rgba(0,0,0,.75);color:#fff;padding:5px 12px;border-radius:4px;
+  font-size:11px;font-weight:600;cursor:pointer;border:none;transform:translateY(8px);
+  transition:transform var(--t-spring),background var(--t-fast)}
+.pe-upload-preview:hover .ovl button{transform:none}
+.pe-upload-preview .ovl button:hover{background:var(--red);transform:translateY(-2px) scale(1.05)}
+
+.pe-deco-tabs{display:flex;gap:4px;margin-bottom:14px;padding:3px;background:var(--bg-0);border-radius:6px;position:relative}
+.pe-deco-tabs button{flex:1;padding:6px 8px;border-radius:4px;font-size:12px;font-weight:600;
+  color:var(--text-4);letter-spacing:.02em;
+  transition:background var(--t-base),color var(--t-fast),transform var(--t-fast)}
+.pe-deco-tabs button.active{background:var(--accent);color:#fff;animation:tabPop .25s cubic-bezier(.34,1.56,.64,1)}
+.pe-deco-tabs button:hover:not(.active){color:var(--text-2);transform:scale(1.04)}
+
+.pe-deco-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-height:340px;overflow-y:auto;padding:2px}
+.pe-deco-item{aspect-ratio:1;border-radius:6px;background:var(--bg-0);border:2px solid transparent;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  cursor:pointer;padding:8px;position:relative;
+  animation:scaleIn .3s ease both;
+  transition:background var(--t-fast),border-color var(--t-base),transform var(--t-spring),box-shadow var(--t-base)}
+.pe-deco-item:hover{background:#1a1b1e;border-color:#3f4147;transform:translateY(-3px) scale(1.03);
+  box-shadow:0 8px 16px rgba(0,0,0,.3)}
+.pe-deco-item:active{transform:translateY(-1px) scale(1.01)}
+.pe-deco-item.active{border-color:var(--accent);background:rgba(88,101,242,.08);
+  box-shadow:0 0 0 3px rgba(88,101,242,.18)}
+.pe-deco-item .demo{width:36px;height:36px;border-radius:50%;position:relative;
+  background:linear-gradient(135deg,#5865f2,#00d9ff);--c1:#5865f2;--c2:#00d9ff;flex-shrink:0;
+  transition:transform var(--t-spring)}
+.pe-deco-item:hover .demo{transform:scale(1.1)}
+.pe-deco-item .demo-label{font-size:9px;color:var(--text-5);text-align:center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;width:100%}
+.pe-deco-item.active .demo-label{color:var(--text-2);font-weight:600}
+
+.pe-bg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:340px;overflow-y:auto}
+.pe-bg-item{aspect-ratio:16/10;border-radius:6px;background:#1e1f22;border:2px solid transparent;
+  cursor:pointer;overflow:hidden;position:relative;
+  animation:scaleIn .3s ease both;
+  transition:border-color var(--t-base),transform var(--t-spring),box-shadow var(--t-base)}
+.pe-bg-item:hover{border-color:#3f4147;transform:translateY(-3px) scale(1.03)}
+.pe-bg-item.active{border-color:var(--accent);box-shadow:0 0 0 3px rgba(88,101,242,.18)}
+.pe-bg-item .pe-bg-anim{position:absolute;inset:0}
+.pe-bg-item .pe-bg-label{position:absolute;bottom:0;left:0;right:0;padding:4px 6px;
+  background:linear-gradient(0deg,rgba(0,0,0,.9),transparent);font-size:10px;font-weight:600;
+  color:#fff;text-align:center}
+
+.pe-games-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pe-game{aspect-ratio:16/9;border-radius:6px;overflow:hidden;position:relative;
+  background:#1e1f22;border:1px solid #1e1f22;
+  animation:scaleIn .3s ease both;
+  transition:transform var(--t-spring),box-shadow var(--t-base),border-color var(--t-fast)}
+.pe-game:hover{transform:translateY(-3px) scale(1.03);border-color:#3f4147;box-shadow:0 8px 16px rgba(0,0,0,.3)}
+.pe-game img{width:100%;height:100%;object-fit:cover;display:block;transition:transform var(--t-slow)}
+.pe-game:hover img{transform:scale(1.06)}
+.pe-game .game-emoji{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:28px;color:rgba(255,255,255,.4)}
+.pe-game .game-name{position:absolute;bottom:0;left:0;right:0;padding:4px 6px;
+  background:linear-gradient(0deg,rgba(0,0,0,.95),transparent);font-size:10px;font-weight:600;
+  color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.pe-game-picker{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:400px;overflow-y:auto;padding:2px}
+.pe-game-pick{aspect-ratio:16/9;border-radius:6px;overflow:hidden;cursor:pointer;position:relative;
+  background:var(--bg-0);border:2px solid transparent;
+  animation:scaleIn .3s ease both;
+  transition:border-color var(--t-base),transform var(--t-spring),box-shadow var(--t-base)}
+.pe-game-pick:hover{border-color:#3f4147;transform:translateY(-3px) scale(1.03);
+  box-shadow:0 8px 16px rgba(0,0,0,.3)}
+.pe-game-pick.active{border-color:var(--accent);box-shadow:0 0 0 3px rgba(88,101,242,.18)}
+.pe-game-pick.active::after{content:'✓';position:absolute;top:4px;right:4px;width:20px;height:20px;
+  border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;animation:pop .3s cubic-bezier(.34,1.56,.64,1)}
+.pe-game-pick img{width:100%;height:100%;object-fit:cover;display:block;transition:transform var(--t-slow)}
+.pe-game-pick:hover img{transform:scale(1.06)}
+.pe-game-pick .p-emoji{position:absolute;inset:0;display:flex;align-items:center;
+  justify-content:center;font-size:24px;color:rgba(255,255,255,.4)}
+.pe-game-pick .p-name{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(0deg,rgba(0,0,0,.95),transparent);
+  padding:3px 5px;font-size:9.5px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ============ AVATAR DECORATIONS ============ */
+.av{position:relative;display:inline-flex;flex-shrink:0;--c1:#5865f2;--c2:#00d9ff;isolation:isolate}
+.av > .avatar{position:relative;z-index:2;margin:auto}
+.avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:600;color:#fff;flex-shrink:0;overflow:hidden;position:relative;z-index:2}
+.avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;transition:transform var(--t-slow)}
+.avatar:hover img{transform:scale(1.08)}
+.avatar.sm{width:26px;height:26px;font-size:11px}
+.avatar.md{width:40px;height:40px;font-size:15px}
+.avatar.lg{width:80px;height:80px;font-size:30px}
+.avatar.xl{width:120px;height:120px;font-size:44px}
+.avatar.xxl{width:96px;height:96px;font-size:34px}
+
+.av-deco::before,.av-deco::after{content:'';position:absolute;top:50%;left:50%;
+  width:calc(100% + 8px);height:calc(100% + 8px);transform:translate(-50%,-50%);
+  border-radius:50%;pointer-events:none;z-index:1;opacity:0}
+.deco-1d-ring::before{opacity:1;background:transparent;border:2px solid var(--c1)}
+.deco-1d-ring-dash::before{opacity:1;background:transparent;border:2px dashed var(--c1);
+  animation:spinCenter 8s linear infinite}
+.deco-1d-ring-double::before{opacity:1;background:transparent;border:2px solid var(--c1)}
+.deco-1d-ring-double::after{opacity:1;background:transparent;border:1px solid var(--c2);
+  width:calc(100% + 18px);height:calc(100% + 18px)}
+.deco-1d-ring-neon::before{opacity:1;background:transparent;border:2px solid var(--c1);
+  box-shadow:0 0 8px var(--c1),0 0 16px var(--c1)}
+.deco-1d-ring-gradient::before{opacity:1;background:conic-gradient(from 0deg,var(--c1),var(--c2),var(--c1));
+  -webkit-mask:radial-gradient(circle,transparent 62%,#000 64%);
+  mask:radial-gradient(circle,transparent 62%,#000 64%);
+  border:none;animation:spinCenter 4s linear infinite}
+.deco-1d-ring-thin::before{opacity:1;background:transparent;border:1px solid var(--c1);opacity:.7}
+.deco-2d-stars::before{opacity:1;background:none;border:none;width:auto;height:auto;
+  content:'✦';top:-8px;left:auto;right:-8px;transform:none;font-size:14px;color:#ffe066}
+.deco-2d-hearts::before{opacity:1;background:none;border:none;width:auto;height:auto;
+  content:'♥';top:-8px;right:-8px;left:auto;transform:none;font-size:13px;color:#ff4d94;
+  animation:heartbeat 1.2s ease-in-out infinite}
+.deco-2d-flames::before{opacity:1;background:none;border:none;width:auto;height:auto;
+  content:'🔥';top:-13px;left:50%;transform:translateX(-50%);font-size:14px}
+.deco-2d-crown::before{opacity:1;background:none;border:none;width:auto;height:auto;
+  content:'♛';top:-15px;left:50%;transform:translateX(-50%);font-size:17px;color:#ffd700}
+.deco-2d-cat::before{opacity:1;background:none;border:none;width:auto;height:auto;
+  content:'🐱';top:-11px;left:-11px;transform:none;font-size:13px}
+.deco-2d-sparkle::before{opacity:1;background:none;border:none;width:auto;height:auto;
+  content:'✨';top:-9px;right:-8px;left:auto;transform:none;font-size:14px}
+.deco-2d-diamond::before{opacity:1;background:none;border:none;width:auto;height:auto;
+  content:'◆';top:-10px;right:-9px;left:auto;transform:none;font-size:13px;color:#00d9ff}
+.deco-2d-lightning::before{opacity:1;background:none;border:none;width:auto;height:auto;
+  content:'⚡';top:-11px;right:-8px;left:auto;transform:none;font-size:14px}
+.deco-2d-snowflake::before{opacity:1;background:none;border:none;width:auto;height:auto;
+  content:'❄';top:-11px;right:-8px;left:auto;transform:none;font-size:13px;color:#c9e3ff}
+.deco-2d-flower::before{opacity:1;background:none;border:none;width:auto;height:auto;
+  content:'🌸';top:-10px;right:-9px;left:auto;transform:none;font-size:13px}
+.deco-2d-skull::before{opacity:1;background:none;border:none;width:auto;height:auto;
+  content:'💀';top:-11px;right:-9px;left:auto;transform:none;font-size:13px}
+.deco-2d-planet::before{opacity:1;background:none;border:none;width:auto;height:auto;
+  content:'🪐';top:-11px;right:-10px;left:auto;transform:none;font-size:14px}
+.deco-2d-moon::before{opacity:1;background:none;border:none;width:auto;height:auto;
+  content:'🌙';top:-10px;right:-8px;left:auto;transform:none;font-size:13px}
+.deco-2d-halo::before{opacity:1;background:none;border:none;width:auto;height:auto;
+  content:'⭘';top:-15px;left:50%;transform:translateX(-50%);font-size:20px;color:#ffe066}
+.deco-2d-fire-ring::before{opacity:1;background:conic-gradient(from 0deg,#ff5500,#ffbb00,#ff5500);
+  -webkit-mask:radial-gradient(circle,transparent 60%,#000 62%);
+  mask:radial-gradient(circle,transparent 60%,#000 62%);
+  border:none;animation:spinCenter 3s linear infinite}
+.deco-2d-ice-ring::before{opacity:1;background:conic-gradient(from 0deg,#88e0ff,#e0f6ff,#88e0ff);
+  -webkit-mask:radial-gradient(circle,transparent 60%,#000 62%);
+  mask:radial-gradient(circle,transparent 60%,#000 62%);
+  border:none;animation:spinCenter 5s linear infinite}
+.deco-2d-rainbow-ring::before{opacity:1;
+  background:conic-gradient(from 0deg,#ff3b3b,#ff9d00,#ffe100,#2bd96a,#22c4ff,#8b5cff,#ff3bcf,#ff3b3b);
+  -webkit-mask:radial-gradient(circle,transparent 60%,#000 62%);
+  mask:radial-gradient(circle,transparent 60%,#000 62%);
+  border:none;animation:spinCenter 4s linear infinite}
+.deco-3d-orb::before{opacity:1;background:radial-gradient(circle at 30% 30%,var(--c1),var(--c2) 60%,#000 110%);
+  -webkit-mask:radial-gradient(circle,transparent 60%,#000 62%);
+  mask:radial-gradient(circle,transparent 60%,#000 62%);
+  border:none;width:calc(100% + 12px);height:calc(100% + 12px);
+  animation:spinCenter 8s linear infinite}
+.deco-3d-cube::before{opacity:1;background:linear-gradient(135deg,var(--c1),var(--c2));border:none;
+  width:calc(100% + 4px);height:calc(100% + 4px);border-radius:20%;
+  animation:cubeSpin 4s linear infinite}
+.deco-3d-prism::before{opacity:1;background:linear-gradient(135deg,var(--c1) 0%,transparent 50%,var(--c2) 100%);
+  clip-path:polygon(50% 0%,100% 38%,82% 100%,18% 100%,0% 38%);
+  border:none;width:calc(100% + 14px);height:calc(100% + 14px);
+  animation:spinCenter 10s linear infinite}
+.deco-3d-sphere::before{opacity:1;
+  background:radial-gradient(circle at 25% 25%,rgba(255,255,255,.7),transparent 35%),
+    radial-gradient(circle at 75% 75%,var(--c1),var(--c2));
+  -webkit-mask:radial-gradient(circle,transparent 62%,#000 64%);
+  mask:radial-gradient(circle,transparent 62%,#000 64%);
+  border:none;width:calc(100% + 12px);height:calc(100% + 12px);
+  animation:spinCenter 12s linear infinite}
+.deco-3d-gyroscope::before{opacity:1;background:transparent;
+  border:2px solid var(--c1);border-top-color:transparent;border-right-color:var(--c2);
+  border-radius:50%;width:calc(100% + 12px);height:calc(100% + 12px);
+  animation:spinCenter 2.5s linear infinite}
+.deco-3d-gyroscope::after{opacity:1;background:transparent;
+  border:1px solid var(--c2);border-bottom-color:transparent;border-left-color:var(--c1);
+  border-radius:50%;width:calc(100% + 22px);height:calc(100% + 22px);
+  animation:spinCenterRev 4s linear infinite}
+.deco-3d-portal::before{opacity:1;
+  background:conic-gradient(from 0deg,transparent,var(--c1),transparent 40%,var(--c2),transparent 80%,transparent);
+  -webkit-mask:radial-gradient(circle,transparent 55%,#000 60%);
+  mask:radial-gradient(circle,transparent 55%,#000 60%);
+  border:none;width:calc(100% + 16px);height:calc(100% + 16px);
+  animation:spinCenter 3s linear infinite}
+.deco-3d-halo-3d::before{opacity:1;background:transparent;border:2px solid #ffe066;
+  width:calc(100% + 4px);height:30%;border-radius:50%;top:-14px;left:50%;
+  transform:translateX(-50%) rotateX(70deg);box-shadow:0 0 12px #ffe066;
+  animation:haloSpin3d 4s linear infinite}
+.deco-3d-neon-cube::before{opacity:1;background:linear-gradient(135deg,var(--c1),var(--c2));
+  border-radius:15%;width:calc(100% + 6px);height:calc(100% + 6px);border:none;
+  box-shadow:0 0 8px var(--c1),0 0 20px var(--c1),0 0 40px var(--c2);
+  animation:cubeSpin 6s linear infinite}
+.deco-3d-crystal-3d::before{opacity:1;
+  background:conic-gradient(from 45deg,var(--c1) 0 25%,transparent 25% 50%,var(--c2) 50% 75%,transparent 75% 100%);
+  clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);
+  border:none;width:calc(100% + 12px);height:calc(100% + 12px);
+  animation:spinCenter 6s linear infinite}
+.deco-3d-ring-3d::before{opacity:1;background:transparent;border:3px solid var(--c1);
+  border-radius:50%;width:calc(100% + 10px);height:calc(100% + 10px);
+  animation:spinCenter 5s linear infinite;box-shadow:0 0 16px var(--c1)}
+
+@keyframes spinCenter{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes spinCenterRev{from{transform:translate(-50%,-50%) rotate(360deg)}to{transform:translate(-50%,-50%) rotate(0)}}
+@keyframes heartbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}
+@keyframes cubeSpin{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes haloSpin3d{from{transform:translateX(-50%) rotateX(70deg) rotateZ(0)}to{transform:translateX(-50%) rotateX(70deg) rotateZ(360deg)}}
+
+.av-frame{position:relative;display:inline-flex;padding:3px;border-radius:50%}
+.av-frame::before{content:'';position:absolute;inset:0;border-radius:50%;pointer-events:none;z-index:1;opacity:0}
+.frame-glow::before{opacity:1;box-shadow:0 0 20px var(--c1);border:2px solid var(--c1)}
+.frame-neon::before{opacity:1;border:2px solid var(--c1);box-shadow:0 0 8px var(--c1)}
+.frame-gold::before{opacity:1;border:3px solid #ffd700}
+.frame-rainbow::before{opacity:1;
+  background:conic-gradient(from 0deg,#ff3b3b,#ff9d00,#ffe100,#2bd96a,#22c4ff,#8b5cff,#ff3bcf,#ff3b3b);
+  -webkit-mask:radial-gradient(circle,transparent 70%,#000 72%);
+  mask:radial-gradient(circle,transparent 70%,#000 72%);animation:spinCenter 5s linear infinite}
+.frame-fire::before{opacity:1;background:conic-gradient(from 0deg,#ff5500,#ffbb00,#ff5500);
+  -webkit-mask:radial-gradient(circle,transparent 68%,#000 70%);
+  mask:radial-gradient(circle,transparent 68%,#000 70%);animation:spinCenter 3s linear infinite}
+.frame-ice::before{opacity:1;background:conic-gradient(from 0deg,#88e0ff,#e0f6ff,#88e0ff);
+  -webkit-mask:radial-gradient(circle,transparent 68%,#000 70%);
+  mask:radial-gradient(circle,transparent 68%,#000 70%);animation:spinCenter 6s linear infinite}
+.frame-hexagon::before{opacity:1;background:conic-gradient(from 0deg,var(--c1),var(--c2),var(--c1));
+  clip-path:polygon(50% 0%,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);animation:spinCenter 8s linear infinite}
+.frame-pulse::before{opacity:1;border:2px solid var(--c1);animation:frameRingPulse 1.8s ease-in-out infinite}
+@keyframes frameRingPulse{0%{transform:scale(1);opacity:1}100%{transform:scale(1.15);opacity:0}}
+
+.ne-rainbow{background:linear-gradient(90deg,#ff3b3b,#ff9d00,#ffe100,#2bd96a,#22c4ff,#8b5cff,#ff3bcf,#ff3b3b);
+  background-size:300% auto;-webkit-background-clip:text;background-clip:text;color:transparent!important;
+  animation:rainbowMove 3.5s linear infinite;font-weight:600}
+@keyframes rainbowMove{to{background-position:300% center}}
+.ne-gradient{background:linear-gradient(90deg,var(--c1),var(--c2),var(--c1));
+  background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent!important;
+  animation:gradientMove 4s linear infinite}
+@keyframes gradientMove{to{background-position:200% center}}
+.ne-glow{color:var(--c1)!important;text-shadow:0 0 6px var(--c1)}
+.ne-shimmer{background:linear-gradient(90deg,var(--c1) 0%,#fff 50%,var(--c1) 100%);
+  background-size:250% auto;-webkit-background-clip:text;background-clip:text;color:transparent!important;
+  animation:shimmerMove 2.5s linear infinite}
+@keyframes shimmerMove{to{background-position:250% center}}
+.ne-pulse{color:var(--c1)!important;animation:namePulse 1.6s ease-in-out infinite;font-weight:600}
+@keyframes namePulse{0%,100%{opacity:1}50%{opacity:.7}}
+.ne-neon{color:#fff!important;text-shadow:0 0 5px var(--c1),0 0 10px var(--c1),0 0 20px var(--c1)}
+.ne-holographic{background:linear-gradient(90deg,#ff00e5,#00e5ff,#ff00e5,#ffd700,#ff00e5);
+  background-size:400% auto;-webkit-background-clip:text;background-clip:text;color:transparent!important;
+  animation:holoMove 4s linear infinite;font-weight:600}
+@keyframes holoMove{to{background-position:400% center}}
+.ne-fire{background:linear-gradient(0deg,#ff2b00,#ff5500,#ffbb00,#ff2b00);
+  background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent!important;
+  animation:fireName 2s ease-in-out infinite alternate;font-weight:600}
+@keyframes fireName{to{background-position:200% center}}
+.ne-ice{background:linear-gradient(90deg,#88e0ff,#e0f6ff,#88e0ff);
+  background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent!important;
+  animation:iceName 3s linear infinite}
+@keyframes iceName{to{background-position:200% center}}
+.ne-gold{background:linear-gradient(90deg,#b8860b,#ffd700,#ffed4e,#ffd700,#b8860b);
+  background-size:250% auto;-webkit-background-clip:text;background-clip:text;color:transparent!important;
+  animation:goldName 3s linear infinite;font-weight:600}
+@keyframes goldName{to{background-position:250% center}}
+.ne-pixel{font-family:var(--mono);color:var(--c1)!important;text-shadow:2px 2px 0 var(--c2);font-weight:700}
+
+.pe-effect-aurora .pe-bg-anim{background:
+  radial-gradient(ellipse 60% 40% at 20% 30%,var(--c1),transparent 60%),
+  radial-gradient(ellipse 60% 40% at 80% 70%,var(--c2),transparent 60%);
+  opacity:.55;animation:auroraShift 8s ease-in-out infinite alternate}
+@keyframes auroraShift{0%{transform:translate(-4%,2%) scale(1)}100%{transform:translate(4%,-4%) scale(1.06)}}
+.pe-effect-stars .pe-bg-anim{background-image:
+  radial-gradient(1.5px 1.5px at 15% 25%,#fff,transparent),
+  radial-gradient(1px 1px at 60% 65%,#fff,transparent),
+  radial-gradient(1px 1px at 40% 80%,#fff,transparent),
+  radial-gradient(2px 2px at 75% 22%,#fff,transparent);
+  opacity:.9;animation:starTwinkle 4s ease-in-out infinite}
+@keyframes starTwinkle{0%,100%{opacity:.9}50%{opacity:.4}}
+.pe-effect-matrix .pe-bg-anim{background:repeating-linear-gradient(0deg,transparent 0 18px,var(--c2) 18px 20px);
+  opacity:.28;animation:matrixScroll 6s linear infinite}
+@keyframes matrixScroll{to{background-position:0 40px}}
+.pe-effect-flames .pe-bg-anim{background:
+  radial-gradient(ellipse 90% 70% at 50% 110%,#ff5500,transparent 70%),
+  radial-gradient(ellipse 70% 50% at 30% 120%,#ffbb00,transparent 80%);
+  opacity:.7;animation:flameFlicker 1.5s ease-in-out infinite alternate}
+@keyframes flameFlicker{from{transform:translateY(0) scaleY(1)}to{transform:translateY(-6px) scaleY(1.12)}}
+.pe-effect-bubbles .pe-bg-anim{background-image:
+  radial-gradient(circle 6px at 20% 100%,rgba(255,255,255,.5),transparent),
+  radial-gradient(circle 10px at 60% 108%,rgba(255,255,255,.35),transparent);
+  animation:bubblesUp 7s linear infinite}
+@keyframes bubblesUp{to{background-position:20px -160px}}
+.pe-effect-snow .pe-bg-anim{background-image:
+  radial-gradient(circle 2px at 15% 10%,#fff,transparent),
+  radial-gradient(circle 2px at 55% 30%,#fff,transparent),
+  radial-gradient(circle 2px at 85% 20%,#fff,transparent);
+  background-size:100% 200%;opacity:.85;animation:snowFall 6s linear infinite}
+@keyframes snowFall{to{background-position:0 200%}}
+.pe-effect-waves .pe-bg-anim{background:repeating-linear-gradient(90deg,var(--c2) 0 2px,transparent 2px 26px);
+  opacity:.35;animation:waveShift 4s ease-in-out infinite alternate}
+@keyframes waveShift{from{transform:translateX(0)}to{transform:translateX(12px) skewX(-4deg)}}
+.pe-effect-grid .pe-bg-anim{background-image:
+  linear-gradient(var(--c1) 1px,transparent 1px),
+  linear-gradient(90deg,var(--c1) 1px,transparent 1px);
+  background-size:24px 24px;opacity:.3;animation:gridScroll 5s linear infinite}
+@keyframes gridScroll{to{background-position:0 24px}}
+.pe-effect-glitch .pe-bg-anim{background:repeating-linear-gradient(0deg,transparent 0 3px,var(--c2) 3px 4px);
+  opacity:.25;animation:glitchShift .35s steps(3) infinite}
+@keyframes glitchShift{0%{transform:translate(0)}33%{transform:translate(-3px,1px)}66%{transform:translate(3px,-1px)}}
+.pe-effect-hologram .pe-bg-anim{background:linear-gradient(135deg,
+  rgba(255,0,229,.4),rgba(0,229,255,.4),rgba(255,215,0,.4),rgba(255,0,229,.4));
+  background-size:300% 300%;opacity:.5;animation:holoShift 4s linear infinite}
+@keyframes holoShift{to{background-position:300% 300%}}
+.pe-effect-particles .pe-bg-anim{background-image:
+  radial-gradient(2.5px 2.5px at 10% 20%,var(--c1),transparent),
+  radial-gradient(2.5px 2.5px at 80% 30%,var(--c2),transparent),
+  radial-gradient(2.5px 2.5px at 40% 70%,var(--c1),transparent);
+  opacity:.9;animation:particleDrift 6s ease-in-out infinite alternate}
+@keyframes particleDrift{from{transform:translate(0,0)}to{transform:translate(10px,-10px)}}
+
+/* ============ SETTINGS ============ */
+.settings-overlay{position:fixed;inset:0;background:var(--bg-2);z-index:200;display:none;flex-direction:row;
+  opacity:0;visibility:hidden;
+  transition:opacity var(--t-base),visibility var(--t-base)}
+.settings-overlay.show{display:flex;opacity:1;visibility:visible;animation:fadeIn .28s ease}
+.settings-nav{width:240px;flex-shrink:0;background:var(--bg-0);display:flex;flex-direction:column;
+  padding:60px 8px 16px;overflow-y:auto}
+.settings-nav-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:4px;
+  font-size:14px;font-weight:500;color:var(--text-4);cursor:pointer;margin-bottom:1px;
+  animation:slideInLeft .35s ease both;
+  transition:background var(--t-fast),color var(--t-fast),padding-left var(--t-base)}
+.settings-nav-item:hover{background:#35373c;color:var(--text-2);padding-left:14px}
+.settings-nav-item.active{background:#404249;color:#fff}
+.settings-nav-section{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4);
+  letter-spacing:.02em;padding:16px 10px 6px}
+.settings-content{flex:1;overflow-y:auto;padding:60px 40px 40px;position:relative}
+.settings-close{position:absolute;top:20px;right:24px;width:36px;height:36px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;color:var(--text-4);font-size:20px;
+  border:1px solid #3f4147;cursor:pointer}
+.settings-close:hover{background:#35373c;color:var(--text);transform:rotate(90deg)}
+.settings-body{max-width:740px;margin:0 auto;animation:fadeUp .35s ease both}
+.settings-title{font-size:20px;font-weight:600;color:var(--text);margin-bottom:20px}
+.settings-row{display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid #3f4147;
+  animation:fadeUp .35s ease both}
+.settings-row:last-child{border-bottom:none}
+.settings-row-label{flex:1;font-size:14px;color:var(--text-2);font-weight:500}
+.settings-row-label .sub{display:block;font-size:12px;color:var(--text-4);margin-top:3px;font-weight:400}
+.settings-btn{padding:8px 16px;border-radius:4px;background:var(--accent);color:#fff;font-size:13px;
+  font-weight:500;border:none;white-space:nowrap;cursor:pointer}
+.settings-btn:hover{background:var(--accent-h);transform:translateY(-1px);box-shadow:0 4px 12px rgba(88,101,242,.35)}
+.settings-btn:active{transform:translateY(0) scale(.98)}
+.settings-btn.ghost{background:transparent;color:var(--text-2);border:1px solid #3f4147}
+.settings-btn.ghost:hover{background:#35373c}
+.settings-btn.danger{background:var(--red)}
+.settings-select{background:#1e1f22;color:var(--text-2);padding:8px 12px;border-radius:4px;
+  border:1px solid #3f4147;font-size:14px;min-width:240px;cursor:pointer}
+.settings-select:hover{border-color:#4e5058}
+.settings-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(88,101,242,.18)}
+
+.mic-meter{width:180px;height:10px;background:#1e1f22;border-radius:5px;overflow:hidden;border:1px solid #3f4147}
+.mic-meter-fill{height:100%;width:0%;background:linear-gradient(90deg,#23a55a,#00d9ff);
+  transition:width .06s linear;border-radius:inherit}
+
+.switch{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.switch .slider{position:absolute;cursor:pointer;inset:0;background:#4e5058;
+  transition:background var(--t-base);border-radius:22px}
+.switch .slider::before{content:'';position:absolute;height:18px;width:18px;left:2px;bottom:2px;
+  background:#fff;transition:transform var(--t-spring);border-radius:50%;
+  box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.switch:hover .slider{background:#5a5d64}
+.switch input:checked + .slider{background:var(--green)}
+.switch input:checked + .slider::before{transform:translateX(18px)}
+.switch input:checked + .slider:hover{background:#1e9d52}
+
+.camera-preview{background:#1e1f22;border-radius:8px;overflow:hidden;aspect-ratio:16/9;max-width:480px;
+  position:relative;display:flex;align-items:center;justify-content:center;border:1px solid #3f4147;margin-top:12px;
+  transition:border-color var(--t-base),box-shadow var(--t-base)}
+.camera-preview:hover{border-color:#4e5058}
+.camera-preview video{width:100%;height:100%;object-fit:cover;display:none}
+.camera-preview.live{border-color:var(--green);box-shadow:0 0 0 3px rgba(35,165,90,.15)}
+.camera-preview.live video{display:block;animation:fadeIn .4s ease}
+.camera-preview.live .cam-ph{display:none}
+.camera-preview .cam-ph{color:var(--text-5);text-align:center;animation:fadeIn .3s ease}
+.camera-preview .fps-badge{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.75);
+  padding:3px 8px;border-radius:4px;font-size:11px;font-family:var(--mono);color:#00d9ff;display:none;
+  backdrop-filter:blur(4px)}
+.camera-preview.live .fps-badge{display:block;animation:fadeIn .4s ease}
+
+/* ============ MODAL ============ */
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;
+  justify-content:center;z-index:300;padding:20px;overflow-y:auto}
+.backdrop.show{display:flex;animation:fadeIn .25s ease}
+.modal{background:#313338;border-radius:8px;padding:24px;width:100%;max-width:460px;max-height:90vh;
+  overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.6);margin:auto;
+  animation:modalPop .35s cubic-bezier(.34,1.56,.64,1);will-change:transform,opacity}
+@keyframes modalPop{from{opacity:0;transform:scale(.92) translateY(20px)}to{opacity:1;transform:none}}
+.modal h2{font-size:20px;font-weight:600;color:var(--text);margin-bottom:8px;text-align:center}
+.modal .hint{font-size:14px;color:var(--text-4);margin-bottom:20px;text-align:center;line-height:1.4}
+.modal label{display:block;font-size:12px;font-weight:700;color:var(--text-3);
+  text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px}
+.modal input,.modal textarea,.modal select{width:100%;background:#1e1f22;color:var(--text-2);
+  padding:10px 12px;border-radius:4px;font-size:14px;border:1px solid transparent;
+  margin-bottom:16px;font-family:inherit}
+.modal input:focus,.modal textarea:focus,.modal select:focus{border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(88,101,242,.18)}
+.modal .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}
+.btn{padding:9px 20px;border-radius:4px;font-size:14px;font-weight:500;cursor:pointer;
+  border:none;background:transparent;color:var(--text-2);
+  transition:background var(--t-fast),color var(--t-fast),transform var(--t-fast),box-shadow var(--t-base)}
+.btn:hover{background:#35373c;transform:translateY(-1px)}
+.btn:active{transform:translateY(0) scale(.98)}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-h);box-shadow:0 4px 14px rgba(88,101,242,.4)}
+.btn.danger{background:var(--red);color:#fff}
+.btn.danger:hover{background:#c93a3d;box-shadow:0 4px 14px rgba(242,63,67,.4)}
+
+/* ============ CALL ============ */
+.call-overlay{position:fixed;inset:0;z-index:250;background:#000;display:none;flex-direction:column;
+  align-items:center;justify-content:center;gap:24px;padding:20px}
+.call-overlay.show{display:flex;animation:fadeIn .3s ease}
+.call-avatar-wrap{position:relative;display:flex;align-items:center;justify-content:center;padding:20px;
+  animation:scaleIn .4s cubic-bezier(.34,1.56,.64,1)}
+.call-avatar-wrap .ring{position:absolute;width:170px;height:170px;border-radius:50%;
+  border:2px solid var(--accent);opacity:0}
+.call-overlay.ringing .ring{animation:pulseRing 1.8s infinite}
+.call-overlay.ringing .ring:nth-child(2){animation-delay:.6s}
+@keyframes pulseRing{0%{transform:scale(.9);opacity:.8}100%{transform:scale(1.7);opacity:0}}
+.call-name{font-size:28px;font-weight:600;color:#fff;text-align:center;margin-bottom:6px;
+  animation:fadeUp .4s ease both;animation-delay:.1s}
+.call-status{font-size:14px;color:#b9bbbe;text-align:center;animation:fadeUp .4s ease both;animation-delay:.15s}
+.call-timer{font-size:14px;color:#23a55a;font-family:var(--mono);margin-top:8px;text-align:center}
+.call-screen{width:90%;max-width:1200px;aspect-ratio:16/9;background:#0a0a0a;border-radius:8px;
+  overflow:hidden;border:1px solid #2b2d31;position:relative;display:none}
+.call-screen.show{display:block;animation:scaleIn .4s cubic-bezier(.34,1.56,.64,1)}
+.call-screen video{width:100%;height:100%;object-fit:contain;display:block}
+.call-screen .fps-badge{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.75);
+  padding:4px 10px;border-radius:4px;font-size:12px;font-family:var(--mono);color:#00d9ff;
+  backdrop-filter:blur(4px)}
+.call-controls{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap;justify-content:center;
+  animation:fadeUp .5s ease both;animation-delay:.2s}
+.call-btn{width:56px;height:56px;border-radius:50%;background:#2b2d31;display:flex;align-items:center;
+  justify-content:center;font-size:22px;color:#fff;border:none;cursor:pointer;position:relative;
+  transition:background var(--t-fast),transform var(--t-spring),box-shadow var(--t-base)}
+.call-btn:hover{background:#3f4147;transform:translateY(-3px) scale(1.05);
+  box-shadow:0 8px 20px rgba(0,0,0,.5)}
+.call-btn:active{transform:translateY(-1px) scale(.98)}
+.call-btn.off{background:#fff;color:#111}
+.call-btn.off::after{content:'';position:absolute;width:32px;height:3px;background:#f23f43;
+  transform:rotate(-45deg);border-radius:2px;box-shadow:0 0 3px #000;
+  animation:slashIn .25s cubic-bezier(.34,1.56,.64,1)}
+.call-btn.end{background:var(--red)}
+.call-btn.end:hover{background:#c93a3d;box-shadow:0 8px 24px rgba(242,63,67,.5)}
+.call-btn.on-green{background:var(--green);box-shadow:0 0 20px rgba(35,165,90,.4)}
+
+.hidden{display:none!important}
+
+/* ============ PERF/ACCESSIBILITY ============ */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+body.perf-mode *{animation-duration:0s!important;transition-duration:.05s!important}
+
+@media(max-width:1000px){.right-panel{display:none}}
+</style>
+</head>
+<body>
+
+<div id="authScreen"></div>
+
+<div id="app" class="hide">
+  <nav class="rail">
+    <div class="rail-item active" id="homeBtn" title="Друзья">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-9 8a1 1 0 0 1 1-1h14a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1Z"/></svg>
+    </div>
+    <div class="rail-sep"></div>
+    <div id="serverList"></div>
+    <div class="rail-item rail-add" id="addServerBtn" title="Создать сервер">+</div>
+  </nav>
+
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <button class="sidebar-search-btn" id="findOrStartBtn">Найти или начать беседу</button>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-item active" id="navFriends">
+        <span class="ico">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-9 8a1 1 0 0 1 1-1h14a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1Z"/></svg>
+        </span>
+        <span>Друзья</span>
+      </div>
+    </div>
+    <div class="sidebar-dms">
+      <div class="dms-header">
+        <span>Личные сообщения</span>
+        <span class="add-btn" id="addDMFriend" title="Создать ЛС">+</span>
+      </div>
+      <div class="dm-list" id="dmList"></div>
+    </div>
+    <div class="user-panel">
+      <div class="avatar-wrap" id="meAvatarSlot"></div>
+      <div class="user-panel-info" id="meInfo">
+        <div class="user-panel-name" id="meName">—</div>
+        <div class="user-panel-tag" id="meTag">—</div>
+      </div>
+      <button class="icon-btn" id="micQuick" title="Микрофон">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"/></svg>
+      </button>
+      <button class="icon-btn" id="headphoneQuick" title="Наушники">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a9 9 0 0 0-9 9v6a3 3 0 0 0 3 3h2v-8H6v-1a6 6 0 1 1 12 0v1h-2v8h2a3 3 0 0 0 3-3v-6a9 9 0 0 0-9-9Z"/></svg>
+      </button>
+      <button class="icon-btn" id="settingsBtn" title="Настройки">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94a7.5 7.5 0 0 0 0-1.88l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.3 7.3 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.23-1.13.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.48a.5.5 0 0 0 .12.64L4.86 10.7a7.5 7.5 0 0 0 0 1.88l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.4 1.05.71 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.8a.5.5 0 0 0 .49-.42l.36-2.54c.58-.23 1.13-.54 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <main class="main" id="mainArea"></main>
+
+  <aside class="right-panel">
+    <div class="right-header">Активные контакты</div>
+    <div class="right-empty">
+      <div class="icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 15h.01M16 15h.01M8 10h8"/></svg>
+      </div>
+      <div class="title">Пока что тут тихо...</div>
+      <div class="desc">Если ваш друг начнёт чем-то заниматься — например, запустит игру и войдёт в голосовой чат, — вы увидите это здесь!</div>
+    </div>
+  </aside>
+</div>
+
+<div class="pe-overlay" id="peOverlay"></div>
+
+<div class="settings-overlay" id="settingsOverlay">
+  <div class="settings-nav" id="settingsNav"></div>
+  <div class="settings-content">
+    <button class="settings-close" id="settingsClose">✕</button>
+    <div class="settings-body" id="settingsBody"></div>
+  </div>
+</div>
+
+<div class="backdrop" id="backdrop"><div class="modal" id="modalContent"></div></div>
+
+<div class="call-overlay" id="callOverlay">
+  <div class="call-screen" id="callScreen">
+    <video id="callRemoteVideo" autoplay playsinline></video>
+    <div class="fps-badge" id="callFpsBadge">-- FPS</div>
+  </div>
+  <div class="call-avatar-wrap" id="callAvatarWrap">
+    <div class="ring"></div><div class="ring"></div>
+    <div id="callAvatarSlot"></div>
+  </div>
+  <div>
+    <div class="call-name" id="callName">—</div>
+    <div class="call-status" id="callStatus">Соединение...</div>
+    <div class="call-timer" id="callTimer" style="display:none"><span id="callTimerText">00:00</span></div>
+  </div>
+  <div class="call-controls">
+    <button class="call-btn" id="btnMute" title="Микрофон">🎤</button>
+    <button class="call-btn" id="btnDeaf" title="Звук">🔊</button>
+    <button class="call-btn" id="btnShare" title="Демонстрация экрана">🖥</button>
+    <button class="call-btn end" id="btnEnd" title="Завершить">📵</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   i18n
+   ============================================================ */
+const I18N = {
+  ru:{login:'Войти',register:'Регистрация',logout:'Выйти',welcome_back:'С возвращением!',
+    welcome_sub:'Мы рады видеть вас снова',username:'Юзернейм',password:'Пароль',email:'Электронная почта',
+    display_name:'Отображаемое имя',no_account:'Нужен аккаунт?',have_account:'Уже есть аккаунт?',
+    create_account:'Создать аккаунт',create_sub:'По @юзернейму вас будут находить друзья',
+    continue:'Продолжить',confirm:'Подтвердить',cancel:'Отмена',save:'Сохранить',close:'Закрыть',
+    send_again:'Отправить снова',back:'Назад',verification:'Подтверждение',verif_sub:'Мы отправили код на',
+    code:'Код',incorrect_code:'Неверный код',expired:'Код истёк',fill_fields:'Заполните все поля',
+    user_not_found:'Пользователь не найден',wrong_password:'Неверный пароль',invalid_email:'Некорректный email',
+    user_taken:'Юзернейм занят',email_taken:'Email уже зарегистрирован',password_short:'Пароль минимум 6',
+    name_short:'Имя минимум 2',username_rule:'Юзернейм: 3-20 символов (a-z, 0-9, _, .)',
+    friends:'Друзья',online:'В сети',offline:'Не в сети',all:'Все',waiting:'Ожидание',
+    add_friend_tab:'Добавить в друзья',search:'Поиск',type_message:'Написать сообщение...',
+    type_to:'Написать',profile:'Профиль',settings:'Настройки',
+    account:'Учётная запись',voice_video:'Голос и видео',language:'Язык',
+    edit_profile:'Редактировать профиль',save_profile:'Сохранить',saved:'Сохранено',
+    no_friends:'Пока никого нет',no_friends_desc:'Добавьте друга по @юзернейму',
+    no_friends_online:'Сейчас никого нет в сети',no_requests:'Нет входящих заявок',nothing_found:'Ничего не найдено',
+    avatar:'Аватар',banner:'Баннер',name_style:'Стиль имени',decorations:'Украшения',
+    frames:'Рамки',background:'Фон профиля',fav_games:'Любимые игры',about_me:'О СЕБЕ',
+    message:'Сообщение',call:'Позвонить',general:'Основное',pronouns:'Местоимения',
+    custom_status:'Статус',bio:'О себе',upload:'Загрузить с ПК',replace:'Заменить',remove:'Удалить',
+    pick_file:'Выбрать файл',mic:'Микрофон',mic_volume:'Уровень микрофона',
+    noise_suppression:'Шумоподавление',echo_cancellation:'Эхоподавление',auto_gain:'Автоусиление',
+    screen_fps:'FPS демонстрации экрана',test_mic:'Тест микрофона',stop_test:'Стоп',
+    video_quality:'Качество видео',high:'Высокое',medium:'Среднее',low:'Низкое',
+    screen_share_quality:'Качество демонстрации',not_set:'Не найдено',default_device:'По умолчанию',
+  },
+  en:{login:'Log in',register:'Register',logout:'Log out',welcome_back:'Welcome back!',
+    welcome_sub:'We are happy to see you again',username:'Username',password:'Password',email:'Email',
+    display_name:'Display name',no_account:"Don't have an account?",have_account:'Already have an account?',
+    create_account:'Create account',create_sub:'Friends find you by @username',continue:'Continue',
+    confirm:'Confirm',cancel:'Cancel',save:'Save',close:'Close',send_again:'Send again',back:'Back',
+    verification:'Verification',verif_sub:'We sent a code to',code:'Code',incorrect_code:'Incorrect code',
+    expired:'Code expired',fill_fields:'Fill in all fields',user_not_found:'User not found',
+    wrong_password:'Wrong password',invalid_email:'Invalid email',user_taken:'Username taken',
+    email_taken:'Email already registered',password_short:'Password min. 6',name_short:'Name min. 2',
+    username_rule:'Username: 3-20 chars',friends:'Friends',online:'Online',offline:'Offline',
+    all:'All',waiting:'Pending',add_friend_tab:'Add friend',search:'Search',
+    type_message:'Type a message...',type_to:'Message',profile:'Profile',settings:'Settings',
+    account:'Account',voice_video:'Voice & video',language:'Language',
+    edit_profile:'Edit profile',save_profile:'Save',saved:'Saved',
+    no_friends:'No friends yet',no_friends_desc:'Add a friend by @username',
+    no_friends_online:'No one is online right now',no_requests:'No incoming requests',nothing_found:'Nothing found',
+    avatar:'Avatar',banner:'Banner',name_style:'Name style',decorations:'Decorations',
+    frames:'Frames',background:'Profile background',fav_games:'Favorite games',about_me:'ABOUT ME',
+    message:'Message',call:'Call',general:'General',pronouns:'Pronouns',
+    custom_status:'Status',bio:'About me',upload:'Upload from PC',replace:'Replace',remove:'Remove',
+    pick_file:'Pick file',mic:'Microphone',mic_volume:'Mic volume',
+    noise_suppression:'Noise suppression',echo_cancellation:'Echo cancellation',auto_gain:'Auto gain control',
+    screen_fps:'Screen share FPS',test_mic:'Test microphone',stop_test:'Stop',
+    video_quality:'Video quality',high:'High',medium:'Medium',low:'Low',
+    screen_share_quality:'Screen share quality',not_set:'Not found',default_device:'Default',
+  },
+  uk:{login:'Увійти',register:'Реєстрація',logout:'Вийти',welcome_back:'З поверненням!',
+    welcome_sub:'Ми раді бачити вас знову',username:'Юзернейм',password:'Пароль',email:'Електронна пошта',
+    display_name:"Ім'я",no_account:'Немає акаунта?',have_account:'Вже є акаунт?',
+    create_account:'Створити акаунт',create_sub:'За @юзернеймом вас знайдуть друзі',
+    continue:'Продовжити',confirm:'Підтвердити',cancel:'Скасувати',save:'Зберегти',close:'Закрити',
+    send_again:'Надіслати ще раз',back:'Назад',verification:'Підтвердження',verif_sub:'Ми надіслали код на',
+    code:'Код',incorrect_code:'Невірний код',expired:'Код застарів',fill_fields:'Заповніть поля',
+    user_not_found:'Користувача не знайдено',wrong_password:'Невірний пароль',invalid_email:'Некоректний email',
+    user_taken:'Юзернейм зайнято',email_taken:'Email вже зареєстровано',password_short:'Пароль мін. 6',
+    name_short:"Ім'я мін. 2",username_rule:'Юзернейм: 3-20 (a-z, 0-9, _, .)',
+    friends:'Друзі',online:'У мережі',offline:'Не в мережі',all:'Усі',waiting:'Очікування',
+    add_friend_tab:'Додати в друзі',search:'Пошук',type_message:'Написати...',type_to:'Написати',
+    profile:'Профіль',settings:'Налаштування',
+    account:'Обліковий запис',voice_video:'Голос і відео',language:'Мова',
+    edit_profile:'Редагувати профіль',save_profile:'Зберегти',saved:'Збережено',
+    no_friends:'Поки що нікого',no_friends_desc:'Додайте друга за @юзернеймом',
+    no_friends_online:'Зараз нікого в мережі',no_requests:'Немає вхідних заявок',nothing_found:'Нічого не знайдено',
+    avatar:'Аватар',banner:'Банер',name_style:'Стиль імені',decorations:'Прикраси',
+    frames:'Рамки',background:'Фон профілю',fav_games:'Улюблені ігри',about_me:'ПРО СЕБЕ',
+    message:'Повідомлення',call:'Зателефонувати',general:'Основне',pronouns:'Займенники',
+    custom_status:'Статус',bio:'Про себе',upload:'Завантажити з ПК',replace:'Замінити',remove:'Видалити',
+    pick_file:'Вибрати файл',mic:'Мікрофон',mic_volume:'Рівень мікрофона',
+    noise_suppression:'Шумозаглушення',echo_cancellation:'Ехозаглушення',auto_gain:'Автопідсилення',
+    screen_fps:'FPS демонстрації',test_mic:'Тест мікрофона',stop_test:'Стоп',
+    video_quality:'Якість відео',high:'Висока',medium:'Середня',low:'Низька',
+    screen_share_quality:'Якість демонстрації',not_set:'Не знайдено',default_device:'За замовчуванням',
+  },
+};
+let LANG = 'ru';
+const t = k => (I18N[LANG] && I18N[LANG][k]) || I18N.ru[k] || k;
+
+/* ============================================================
+   UTILS
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const uid = () => Math.random().toString(36).slice(2,11);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtTime = t => { const d = new Date(t); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); };
+const COLORS = ['#5865f2','#3ba55d','#faa81a','#ed4245','#eb459e','#00a8fc','#9b59b6','#e67e22','#1abc9c','#ff6b6b','#4ecdc4','#c084fc'];
+const hashStr = s => { let h=0; for (const c of String(s)) h=(h*31+c.charCodeAt(0))>>>0; return h; };
+function initials(n){const p=String(n||'?').trim().split(/[\s_.-]+/).filter(Boolean);return p.length?(p[0][0]+(p[1]?p[1][0]:'')).toUpperCase():'?';}
+const sanitizeUsername = u => String(u||'').toLowerCase().replace(/[^a-z0-9_.]/g,'').slice(0,20);
+const validUsername = u => /^[a-z0-9_.]{3,20}$/.test(u);
+const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+
+/* Sounds */
+let actx = null;
+function beep(f=440,d=.12,ty='sine',v=.05){
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = ty; o.frequency.value = f;
+    o.connect(g); g.connect(actx.destination);
+    g.gain.setValueAtTime(v, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + d);
+    o.start(); o.stop(actx.currentTime + d);
+  }catch(e){}
+}
+const sndMsg = () => { beep(880,.08,'sine',.04); setTimeout(()=>beep(1320,.08,'sine',.035),65); };
+const sndJoin = () => { beep(660,.12,'sine',.05); setTimeout(()=>beep(990,.18,'sine',.045),110); };
+const sndLeave = () => { beep(500,.12,'sine',.045); setTimeout(()=>beep(330,.2,'sine',.045),110); };
+const sndRing = () => { beep(560,.35,'triangle',.045); setTimeout(()=>beep(720,.35,'triangle',.045),420); };
+
+function toast(title, body, type='', dur=4500){
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.innerHTML = `<div class="t-title">${esc(title)}</div>${body ? `<div class="t-body">${body}</div>` : ''}`;
+  $('#toast').appendChild(el);
+  setTimeout(()=>{ el.style.transition='opacity .3s ease,transform .3s ease'; el.style.opacity='0'; el.style.transform='translateX(120%)';
+    setTimeout(()=>el.remove(),320); }, dur);
+}
+
+/* ============================================================
+   STORAGE
+   ============================================================ */
+const K = {
+  users:'siskore_u6', session:'siskore_s6', messages:'siskore_m6', friends:'siskore_f6',
+  requests:'siskore_r6', presence:'siskore_p6', states:'siskore_st6', lang:'siskore_l6',
+  bus:'siskore_b6', settings:'siskore_set6',
+};
+const readJSON = (k,d) => { try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } };
+const writeJSON = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
+
+let bus = null;
+try { bus = new BroadcastChannel(K.bus); } catch(e){}
+const busHandlers = [];
+const onBus = fn => { busHandlers.push(fn); if (bus) bus.addEventListener('message', e => fn(e.data)); };
+const emit = (type,payload) => { if (bus) bus.postMessage(Object.assign({type,time:Date.now()},payload)); };
+window.addEventListener('storage', e => { if (e.key) busHandlers.forEach(fn => fn({type:'storage',key:e.key})); });
+
+let userSettings = {
+  micDeviceId: null,
+  noiseSuppression: true,
+  echoCancellation: true,
+  autoGainControl: true,
+  screenFps: 75,
+  micMuted: false,
+  headphoneMuted: false,
+};
+function loadUserSettings(){ userSettings = Object.assign(userSettings, readJSON(K.settings, {})); }
+function saveUserSettings(){ writeJSON(K.settings, userSettings); }
+
+/* AUTH */
+let auth = { users:{}, pending:null };
+const loadAuth = () => { auth.users = readJSON(K.users, {}); };
+const saveAuth = () => writeJSON(K.users, auth.users);
+function hashPw(pw){
+  let h = 0; const s = 'siskore::' + pw;
+  for (let i=0;i<s.length;i++) h = (h*31 + s.charCodeAt(i))|0;
+  return 'p' + Math.abs(h).toString(36) + '_' + btoa(unescape(encodeURIComponent(pw))).slice(0,16);
+}
+const checkPw = (pw,h) => hashPw(pw) === h;
+const getSession = () => { try{ return localStorage.getItem(K.session); }catch(e){ return null; } };
+const setSession = u => { try{ localStorage.setItem(K.session,u); }catch(e){} };
+const clearSession = () => { try{ localStorage.removeItem(K.session); }catch(e){} };
+
+/* DECORATIONS */
+const DECORATIONS = [
+  {id:'none',tier:'1d',name:'Нет'},{id:'ring',tier:'1d',name:'Кольцо'},{id:'ring-dash',tier:'1d',name:'Пунктир'},
+  {id:'ring-double',tier:'1d',name:'Двойное'},{id:'ring-neon',tier:'1d',name:'Неон'},{id:'ring-gradient',tier:'1d',name:'Градиент'},
+  {id:'ring-thin',tier:'1d',name:'Тонкое'},
+  {id:'stars',tier:'2d',name:'Звёзды'},{id:'hearts',tier:'2d',name:'Сердечки'},{id:'flames',tier:'2d',name:'Пламя'},
+  {id:'crown',tier:'2d',name:'Корона'},{id:'cat',tier:'2d',name:'Котик'},{id:'sparkle',tier:'2d',name:'Блики'},
+  {id:'diamond',tier:'2d',name:'Алмаз'},{id:'lightning',tier:'2d',name:'Молния'},{id:'snowflake',tier:'2d',name:'Снежинка'},
+  {id:'flower',tier:'2d',name:'Цветок'},{id:'skull',tier:'2d',name:'Череп'},{id:'planet',tier:'2d',name:'Планета'},
+  {id:'moon',tier:'2d',name:'Луна'},{id:'halo',tier:'2d',name:'Нимб'},{id:'fire-ring',tier:'2d',name:'Огонь'},
+  {id:'ice-ring',tier:'2d',name:'Лёд'},{id:'rainbow-ring',tier:'2d',name:'Радуга'},
+  {id:'orb',tier:'3d',name:'Орб'},{id:'cube',tier:'3d',name:'Куб'},{id:'prism',tier:'3d',name:'Призма'},
+  {id:'sphere',tier:'3d',name:'Сфера'},{id:'gyroscope',tier:'3d',name:'Гироскоп'},{id:'portal',tier:'3d',name:'Портал'},
+  {id:'halo-3d',tier:'3d',name:'Нимб 3D'},{id:'neon-cube',tier:'3d',name:'Неон-куб'},
+  {id:'crystal-3d',tier:'3d',name:'Кристалл 3D'},{id:'ring-3d',tier:'3d',name:'Кольцо 3D'},
+];
+const getTier = id => { const d = DECORATIONS.find(x => x.id === id); return d ? d.tier : '1d'; };
+const FRAMES = [{id:'none',name:'Нет'},{id:'glow',name:'Свечение'},{id:'neon',name:'Неон'},{id:'gold',name:'Золото'},
+  {id:'rainbow',name:'Радуга'},{id:'fire',name:'Огонь'},{id:'ice',name:'Лёд'},{id:'hexagon',name:'Гексагон'},{id:'pulse',name:'Пульс'}];
+const NAME_EFFECTS = [{id:'none',name:'Обычный'},{id:'rainbow',name:'Радуга'},{id:'gradient',name:'Градиент'},
+  {id:'glow',name:'Свечение'},{id:'shimmer',name:'Мерцание'},{id:'pulse',name:'Пульс'},{id:'neon',name:'Неон'},
+  {id:'holographic',name:'Голограмма'},{id:'fire',name:'Огонь'},{id:'ice',name:'Лёд'},{id:'gold',name:'Золото'},{id:'pixel',name:'Пиксель'}];
+const PROFILE_EFFECTS = [{id:'none',name:'Нет'},{id:'aurora',name:'Аврора'},{id:'stars',name:'Звёзды'},
+  {id:'matrix',name:'Матрица'},{id:'flames',name:'Огонь'},{id:'bubbles',name:'Пузыри'},{id:'snow',name:'Снег'},
+  {id:'waves',name:'Волны'},{id:'grid',name:'Сетка'},{id:'glitch',name:'Глитч'},{id:'hologram',name:'Голограмма'},{id:'particles',name:'Частицы'}];
+
+/* GAMES */
+const GAME_LIBRARY = [
+  {id:'rust',name:'Rust',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/252490/header.jpg'},
+  {id:'cs2',name:'Counter-Strike 2',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/730/header.jpg'},
+  {id:'repo',name:'R.E.P.O.',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/3241660/header.jpg'},
+  {id:'minecraft',name:'Minecraft',emoji:'⛏️'},
+  {id:'geometry',name:'Geometry Dash',emoji:'🔺'},
+  {id:'terraria',name:'Terraria',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/105600/header.jpg'},
+  {id:'stardew',name:'Stardew Valley',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/413150/header.jpg'},
+  {id:'amongus',name:'Among Us',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/945360/header.jpg'},
+  {id:'gta5',name:'GTA V',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/271590/header.jpg'},
+  {id:'elden',name:'Elden Ring',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/1245620/header.jpg'},
+  {id:'cyberpunk',name:'Cyberpunk 2077',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/1091500/header.jpg'},
+  {id:'apex',name:'Apex Legends',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/1172470/header.jpg'},
+  {id:'r6',name:'Rainbow Six Siege',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/359550/header.jpg'},
+  {id:'dota2',name:'Dota 2',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/570/header.jpg'},
+  {id:'portal2',name:'Portal 2',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/620/header.jpg'},
+  {id:'hades',name:'Hades',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/1145360/header.jpg'},
+  {id:'hollow',name:'Hollow Knight',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/367520/header.jpg'},
+  {id:'celeste',name:'Celeste',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/504230/header.jpg'},
+  {id:'lol',name:'League of Legends',emoji:'⚔️'},
+  {id:'valorant',name:'Valorant',emoji:'🎯'},
+  {id:'fortnite',name:'Fortnite',emoji:'🏆'},
+  {id:'roblox',name:'Roblox',emoji:'🧱'},
+  {id:'pubg',name:'PUBG',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/578080/header.jpg'},
+  {id:'gmod',name:"Garry's Mod",cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/4000/header.jpg'},
+  {id:'tf2',name:'Team Fortress 2',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/440/header.jpg'},
+  {id:'l4d2',name:'Left 4 Dead 2',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/550/header.jpg'},
+  {id:'witcher3',name:'The Witcher 3',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/292030/header.jpg'},
+  {id:'rdr2',name:'Red Dead Redemption 2',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/1174180/header.jpg'},
+  {id:'subnautica',name:'Subnautica',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/264710/header.jpg'},
+  {id:'phasmo',name:'Phasmophobia',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/739630/header.jpg'},
+  {id:'lethal',name:'Lethal Company',cover:'https://cdn.cloudflare.steamstatic.com/steam/apps/1966720/header.jpg'},
+];
+const getGame = id => GAME_LIBRARY.find(g => g.id === id);
+function gameCoverHTML(g){
+  if (!g) return '';
+  if (g.cover) return `<img src="${esc(g.cover)}" alt="${esc(g.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="game-emoji" style="display:none">${esc(g.emoji||'🎮')}</div>`;
+  return `<div class="game-emoji">${esc(g.emoji||'🎮')}</div>`;
+}
+
+/* PROFILE */
+function defaultProfile(username, displayName){
+  const h = hashStr(username);
+  return {
+    username, displayName: displayName || username,
+    avatarColor1: COLORS[h % COLORS.length], avatarColor2: COLORS[(h+3) % COLORS.length],
+    avatarData:null, bannerData:null, avatarEmoji:null,
+    decoration:'none', frame:'none', profileEffect:'none', nameEffect:'none',
+    nameColor1:'#f2f3f5', nameColor2:'#dbdee1',
+    bannerColor1: COLORS[h % COLORS.length], bannerColor2: COLORS[(h+5) % COLORS.length],
+    bio:'', pronouns:'', customStatus:'', status:'online',
+    tag: String(1000 + (h % 9000)),
+    favGames:['rust','cs2','minecraft'],
+  };
+}
+function avatarHTML(u, size='', showDot=false, dotBorder='var(--bg-2)'){
+  if (!u) return '';
+  const c1 = u.avatarColor1||'#5865f2', c2 = u.avatarColor2||'#00d9ff';
+  const bg = `linear-gradient(135deg,${c1},${c2})`;
+  const tier = getTier(u.decoration);
+  const deco = u.decoration && u.decoration !== 'none' ? ` av-deco deco-${tier}-${u.decoration}` : '';
+  const frame = u.frame && u.frame !== 'none' ? ' av-frame frame-'+u.frame : '';
+  let inner;
+  if (u.avatarData) inner = `<div class="avatar ${size}" style="background:${bg}"><img src="${esc(u.avatarData)}" alt=""></div>`;
+  else if (u.avatarEmoji) inner = `<div class="avatar ${size}" style="background:${bg}">${esc(u.avatarEmoji)}</div>`;
+  else inner = `<div class="avatar ${size}" style="background:${bg}">${esc(initials(u.displayName||u.username))}</div>`;
+  const dot = showDot && u.status ? `<div class="status-dot ${u.status}" style="border-color:${dotBorder}"></div>` : '';
+  return `<div class="av${deco}${frame}" style="--c1:${u.nameColor1||c1};--c2:${u.nameColor2||c2}">${inner}${dot}</div>`;
+}
+function nameHTML(u, fallback){
+  if (!u) return '?';
+  const eff = u.nameEffect && u.nameEffect !== 'none' ? ' ne-'+u.nameEffect : '';
+  const c1 = u.nameColor1 || fallback || '#f2f3f5';
+  const c2 = u.nameColor2 || c1;
+  const dn = u.displayName || u.username || '?';
+  return eff ? `<span class="${eff}" style="--c1:${c1};--c2:${c2}">${esc(dn)}</span>`
+    : `<span style="color:${c1}">${esc(dn)}</span>`;
+}
+function bannerStyle(u){
+  if (u.bannerData) return `background-image:url('${String(u.bannerData).replace(/'/g,"\\'")}');background-size:cover;background-position:center`;
+  return `background:linear-gradient(135deg,${u.bannerColor1||'#5865f2'},${u.bannerColor2||'#00d9ff'})`;
+}
+
+/* STATE */
+let state = null, myUsername = null;
+const stateStorage = () => readJSON(K.states, {});
+function loadStateFor(username){
+  const all = stateStorage();
+  let s = all[username];
+  const u = auth.users[username];
+  if (s){
+    s.me = Object.assign(defaultProfile(username, u?.displayName||username), u||{}, s.me||{}, {username});
+    if (!Array.isArray(s.me.favGames)) s.me.favGames = defaultProfile(username).favGames;
+    state = s;
+  } else {
+    const me = Object.assign(defaultProfile(username, u?.displayName||username), u||{}, {username});
+    state = {
+      me,
+      servers:[{id:'srv_'+uid(),name:'Мой сервер',emoji:'◈',owner:username,
+        channels:[{id:'ch_'+uid(),name:'общий'}]}],
+      activeServer:null, activeConv:null,
+    };
+    saveState();
+  }
+}
+let saveT = null;
+function saveState(){
+  if (!state || !myUsername) return;
+  clearTimeout(saveT);
+  saveT = setTimeout(()=>{
+    if (auth.users[myUsername]){
+      const u = auth.users[myUsername];
+      Object.assign(u, {
+        displayName:state.me.displayName,
+        avatarColor1:state.me.avatarColor1, avatarColor2:state.me.avatarColor2,
+        avatarData:state.me.avatarData, bannerData:state.me.bannerData,
+        avatarEmoji:state.me.avatarEmoji, decoration:state.me.decoration,
+        frame:state.me.frame, profileEffect:state.me.profileEffect, nameEffect:state.me.nameEffect,
+        nameColor1:state.me.nameColor1, nameColor2:state.me.nameColor2,
+        bannerColor1:state.me.bannerColor1, bannerColor2:state.me.bannerColor2,
+        bio:state.me.bio, pronouns:state.me.pronouns, customStatus:state.me.customStatus,
+        status:state.me.status, favGames:state.me.favGames,
+      });
+      saveAuth();
+    }
+    const all = stateStorage();
+    all[myUsername] = state;
+    try { writeJSON(K.states, all); }
+    catch(e){ toast('Хранилище', 'Мало места — уменьшите размер файлов', 'error', 6000); }
+    const p = readJSON(K.presence, {});
+    p[myUsername] = Date.now();
+    writeJSON(K.presence, p);
+    emit('profile_update',{username:myUsername});
+  }, 200);
+}
+
+const allMessages = () => readJSON(K.messages, {});
+const setAllMessages = m => writeJSON(K.messages, m);
+const allFriends = () => readJSON(K.friends, {});
+const setAllFriends = f => writeJSON(K.friends, f);
+const convKeyDM = (a,b) => 'dm:' + [a,b].sort().join('|');
+const convKeyChannel = id => 'ch:' + id;
+const getMessages = k => allMessages()[k] || [];
+function appendMessage(k,msg){
+  const all = allMessages();
+  if (!all[k]) all[k] = [];
+  all[k].push(msg);
+  setAllMessages(all);
+  emit('new_message',{convKey:k,id:msg.id});
+}
+const getFriendsList = u => allFriends()[u] || [];
+function addFriendRelation(a,b){
+  const f = allFriends();
+  if (!f[a]) f[a]=[]; if (!f[b]) f[b]=[];
+  if (!f[a].includes(b)) f[a].push(b);
+  if (!f[b].includes(a)) f[b].push(a);
+  setAllFriends(f); emit('friend_added',{a,b});
+}
+function removeFriendRelation(a,b){
+  const f = allFriends();
+  if (f[a]) f[a] = f[a].filter(x => x!==b);
+  if (f[b]) f[b] = f[b].filter(x => x!==a);
+  setAllFriends(f); emit('friend_removed',{a,b});
+}
+function isOnline(username){
+  const p = readJSON(K.presence,{});
+  const ts = p[username];
+  return ts && (Date.now()-ts < 25000);
+}
+function updatePresence(){
+  if (!myUsername) return;
+  const p = readJSON(K.presence,{});
+  p[myUsername] = Date.now();
+  writeJSON(K.presence,p);
+}
+let presenceTimer = null;
+function startPresenceTimer(){ if (presenceTimer) clearInterval(presenceTimer); presenceTimer = setInterval(updatePresence, 8000); }
+const allRequests = () => readJSON(K.requests,{});
+const setAllRequests = r => writeJSON(K.requests,r);
+function sendRequest(from,to){
+  const r = allRequests();
+  if (!r[to]) r[to]=[];
+  if (!r[to].some(x => x.from === from)) r[to].push({from,time:Date.now()});
+  setAllRequests(r); emit('friend_request',{from,to});
+}
+function acceptRequest(from,to){
+  const r = allRequests();
+  if (r[to]) r[to] = r[to].filter(x => x.from !== from);
+  setAllRequests(r); addFriendRelation(from,to);
+}
+function declineRequest(from,to){
+  const r = allRequests();
+  if (r[to]) r[to] = r[to].filter(x => x.from !== from);
+  setAllRequests(r); emit('request_declined',{from,to});
+}
+function getProfile(username){
+  if (state && state.me.username === username) return state.me;
+  const u = auth.users[username];
+  if (u){
+    const p = Object.assign(defaultProfile(username, u.displayName), u, {username});
+    p.status = isOnline(username) ? (u.status||'online') : 'offline';
+    return p;
+  }
+  const all = stateStorage();
+  if (all[username]?.me) return all[username].me;
+  return defaultProfile(username, username);
+}
+
+/* FILE → BASE64 */
+function fileToDataUrl(file, maxDim, cb){
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const src = reader.result;
+    if (file.type === 'image/svg+xml' || file.size < 150*1024){ cb(src); return; }
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim){
+        if (w > h){ h = Math.round(h * maxDim / w); w = maxDim; }
+        else { w = Math.round(w * maxDim / h); h = maxDim; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      try{
+        if (file.type === 'image/gif') cb(src);
+        else if (file.type === 'image/png' || file.type === 'image/webp') cb(canvas.toDataURL('image/png', 0.9));
+        else cb(canvas.toDataURL('image/jpeg', 0.85));
+      }catch(e){ cb(src); }
+    };
+    img.onerror = () => cb(src);
+    img.src = src;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* RENDER */
+function render(){
+  if (!state) return;
+  renderRail(); renderSidebar(); renderMain(); renderMe();
+}
+function renderMe(){
+  $('#meAvatarSlot').innerHTML = avatarHTML(state.me, 'sm', true, '#232428');
+  $('#meName').textContent = state.me.displayName;
+  $('#meTag').textContent = '@' + state.me.username;
+  $('#micQuick').classList.toggle('muted', userSettings.micMuted);
+}
+function renderRail(){
+  const list = $('#serverList');
+  list.innerHTML = '';
+  state.servers.forEach(s=>{
+    const el = document.createElement('div');
+    el.className = 'rail-item' + (state.activeServer === s.id ? ' active' : '');
+    if (s.iconUrl) el.innerHTML = `<img src="${esc(s.iconUrl)}" alt="">`;
+    else el.textContent = s.emoji || initials(s.name);
+    el.title = s.name;
+    el.onclick = ()=>{
+      state.activeServer = s.id;
+      const first = s.channels[0];
+      state.activeConv = first ? convKeyChannel(first.id) : null;
+      saveState(); render();
+    };
+    list.appendChild(el);
+  });
+  $('#homeBtn').classList.toggle('active', state.activeServer === null);
+}
+function renderSidebar(){
+  const list = $('#dmList');
+  list.innerHTML = '';
+  const reqs = allRequests()[myUsername] || [];
+  if (reqs.length){
+    reqs.forEach(r=>{
+      const p = getProfile(r.from);
+      const el = document.createElement('div');
+      el.className = 'dm';
+      el.innerHTML = `
+        ${avatarHTML(p,'sm',true,'var(--bg-2)')}
+        <div class="dm-info">
+          <div class="dm-name">${nameHTML(p)}</div>
+          <div class="dm-sub">Заявка в друзья</div>
+        </div>
+        <div style="display:flex;gap:4px;margin-left:auto">
+          <button data-accept style="color:var(--green);font-size:16px;padding:2px 6px">✓</button>
+          <button data-decline style="color:var(--red);font-size:16px;padding:2px 6px">✕</button>
+        </div>`;
+      el.querySelector('[data-accept]').onclick = (e)=>{ e.stopPropagation(); acceptRequest(r.from,myUsername); toast('✓','@'+r.from,'success'); renderSidebar(); };
+      el.querySelector('[data-decline]').onclick = (e)=>{ e.stopPropagation(); declineRequest(r.from,myUsername); renderSidebar(); };
+      list.appendChild(el);
+    });
+  }
+  const friends = getFriendsList(myUsername);
+  if (!friends.length && !reqs.length){
+    const d = document.createElement('div');
+    d.style.cssText = 'padding:20px 8px;font-size:13px;color:var(--text-5);text-align:center;line-height:1.5';
+    d.textContent = t('no_friends');
+    list.appendChild(d);
+    return;
+  }
+  [...friends].sort((a,b)=>(isOnline(b)?1:0)-(isOnline(a)?1:0)).forEach((u,i)=>{
+    const p = getProfile(u);
+    const key = convKeyDM(myUsername,u);
+    const online = isOnline(u);
+    const el = document.createElement('div');
+    el.className = 'dm' + (state.activeConv === key ? ' active' : '');
+    el.style.animationDelay = (i * 25) + 'ms';
+    el.innerHTML = `
+      ${avatarHTML(Object.assign({},p,{status:online?(p.status||'online'):'offline'}),'sm',true,'var(--bg-2)')}
+      <div class="dm-info">
+        <div class="dm-name">${nameHTML(p)}</div>
+        <div class="dm-sub ${online?'online-text':''}">${online?(p.customStatus||t('online')):t('offline')}</div>
+      </div>`;
+    el.onclick = ()=>{ state.activeServer = null; state.activeConv = key; saveState(); render(); };
+    el.oncontextmenu = e=>{
+      e.preventDefault();
+      if (confirm('Удалить @'+u+'?')){ removeFriendRelation(myUsername,u); renderSidebar(); if (state.activeConv === key){ state.activeConv=null; renderMain(); } }
+    };
+    list.appendChild(el);
+  });
+}
+function renderMain(){
+  const main = $('#mainArea');
+  main.innerHTML = '';
+  if (state.activeServer === null && !state.activeConv){ main.appendChild(buildFriendsPage()); return; }
+  if (!state.activeConv){
+    main.innerHTML = `<div class="empty-state" style="flex:1"><div class="big">◈</div><div class="title">Выберите чат</div></div>`;
+    return;
+  }
+  main.appendChild(buildChatView());
+  setTimeout(renderMessages, 0);
+}
+function buildFriendsPage(){
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;flex:1;min-height:0';
+  const header = document.createElement('div');
+  header.className = 'main-header';
+  header.innerHTML = `
+    <div class="main-tabs">
+      <div class="main-tab active" data-tab="friends">👥 ${t('friends')}<span class="main-tab-sep">|</span></div>
+      <div class="main-tab" data-tab="online">${t('online')}</div>
+      <div class="main-tab" data-tab="all">${t('all')}</div>
+      <div class="main-tab" data-tab="pending">${t('waiting')}</div>
+      <div class="main-tab primary" id="addFriendTab"><span class="plus">+</span> ${t('add_friend_tab')}</div>
+    </div>`;
+  wrap.appendChild(header);
+  const content = document.createElement('div');
+  content.className = 'friends-content';
+  content.innerHTML = `
+    <div class="search-bar"><input id="friendsSearch" placeholder="${t('search')}"></div>
+    <div id="friendsListWrap"></div>`;
+  wrap.appendChild(content);
+  setTimeout(()=>{
+    $('#addFriendTab').onclick = openAddFriendModal;
+    $$('.main-tab').forEach(tab => {
+      if (tab.classList.contains('primary')) return;
+      tab.onclick = ()=>{
+        $$('.main-tab').forEach(x => x.classList.remove('active'));
+        tab.classList.add('active');
+        renderFriendsList(tab.dataset.tab);
+      };
+    });
+    $('#friendsSearch').addEventListener('input', ()=>{
+      const active = document.querySelector('.main-tab.active');
+      renderFriendsList(active ? active.dataset.tab : 'friends');
+    });
+    renderFriendsList('friends');
+  }, 0);
+  return wrap;
+}
+function renderFriendsList(tab){
+  const wrap = $('#friendsListWrap');
+  if (!wrap) return;
+  const q = ($('#friendsSearch')?.value || '').toLowerCase().trim();
+  const friends = getFriendsList(myUsername);
+  const requests = allRequests()[myUsername] || [];
+  let list = friends;
+  if (tab === 'online') list = friends.filter(isOnline);
+  else if (tab === 'pending') list = requests.map(r=>r.from);
+  const filtered = list.filter(u=>{
+    if (!q) return true;
+    const p = getProfile(u);
+    return u.toLowerCase().includes(q) || (p.displayName||'').toLowerCase().includes(q);
+  });
+  if (!filtered.length){
+    let empty;
+    if (tab === 'pending') empty = {title:t('no_requests'),icon:'📭'};
+    else if (tab === 'online') empty = {title:t('no_friends_online'),icon:'💤'};
+    else if (friends.length) empty = {title:t('nothing_found'),icon:'🔍'};
+    else empty = {title:t('no_friends'),desc:t('no_friends_desc'),icon:'👋'};
+    wrap.innerHTML = `<div class="empty-state"><div class="big">${empty.icon}</div><div class="title">${esc(empty.title)}</div>${empty.desc ? `<div class="hint">${esc(empty.desc)}</div>` : ''}</div>`;
+    return;
+  }
+  let html = '';
+  if (tab === 'friends' || tab === 'all' || tab === 'pending'){
+    const online = filtered.filter(isOnline);
+    const offline = filtered.filter(u=>!isOnline(u));
+    if (online.length){
+      html += `<div class="friends-section-title">${t('online')} — ${online.length}</div>`;
+      online.forEach(u => { html += friendRowHTML(u); });
+    }
+    if (offline.length && tab !== 'pending'){
+      html += `<div class="friends-section-title">${t('offline')} — ${offline.length}</div>`;
+      offline.forEach(u => { html += friendRowHTML(u); });
+    }
+  } else {
+    html += `<div class="friends-section-title">${t('online')} — ${filtered.length}</div>`;
+    filtered.forEach(u => { html += friendRowHTML(u); });
+  }
+  wrap.innerHTML = html;
+  $$('#friendsListWrap .friend-row').forEach((row,i)=>{
+    row.style.animationDelay = (i * 30) + 'ms';
+    const u = row.dataset.user;
+    const p = getProfile(u);
+    const openDM = ()=>{ state.activeServer = null; state.activeConv = convKeyDM(myUsername,u); saveState(); render(); };
+    row.onclick = openDM;
+    const callBtn = row.querySelector('[data-call]');
+    if (callBtn) callBtn.onclick = (e)=>{ e.stopPropagation(); startCall(p); };
+    const msgBtn = row.querySelector('[data-msg]');
+    if (msgBtn) msgBtn.onclick = (e)=>{ e.stopPropagation(); openDM(); };
+  });
+}
+function friendRowHTML(u){
+  const p = getProfile(u);
+  const online = isOnline(u);
+  const statusText = online ? (p.customStatus || t('online')) : t('offline');
+  return `
+    <div class="friend-row" data-user="${esc(u)}">
+      <div class="avatar" style="background:linear-gradient(135deg,${p.avatarColor1},${p.avatarColor2})">
+        ${p.avatarData ? `<img src="${esc(p.avatarData)}" alt="">` : esc(initials(p.displayName||u))}
+        <div class="status-dot ${online?(p.status||'online'):'offline'}"></div>
+      </div>
+      <div class="friend-info">
+        <div class="friend-name">${nameHTML(p)}<span class="handle">@${esc(u)}</span></div>
+        <div class="friend-status">${esc(statusText)}</div>
+      </div>
+      <div class="friend-actions">
+        <button class="friend-action-btn" data-msg title="${t('message')}">
+          <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </button>
+        <button class="friend-action-btn" data-call title="${t('call')}">
+          <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </button>
+      </div>
+    </div>`;
+}
+function buildChatView(){
+  const conv = state.activeConv;
+  const isDM = conv.startsWith('dm:');
+  let peer = null;
+  if (isDM){
+    const ids = conv.slice(3).split('|');
+    const other = ids.find(x => x !== myUsername);
+    peer = getProfile(other);
+  }
+  const wrap = document.createElement('div');
+  wrap.className = 'chat-view';
+  const head = document.createElement('div');
+  head.className = 'chat-head';
+  if (isDM && peer){
+    const online = isOnline(peer.username);
+    head.innerHTML = `
+      <div style="cursor:pointer" data-profile="${esc(peer.username)}">
+        ${avatarHTML(Object.assign({},peer,{status:online?(peer.status||'online'):'offline'}),'sm',true,'var(--bg-3)')}
+      </div>
+      <div style="cursor:pointer" data-profile="${esc(peer.username)}">
+        <div class="name"><span class="dn"></span><span class="handle">@${esc(peer.username)}</span></div>
+        <div class="sub">${online?t('online'):t('offline')}</div>
+      </div>
+      <div class="head-actions">
+        <button data-call title="${t('call')}">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </button>
+      </div>`;
+    head.querySelector('.dn').innerHTML = nameHTML(peer);
+    head.querySelector('[data-call]').onclick = ()=> startCall(peer);
+    head.querySelector('[data-profile]').onclick = ()=> openProfilePopout(peer);
+  } else {
+    let name = '';
+    for (const s of state.servers) for (const c of s.channels) if (convKeyChannel(c.id) === conv) name = c.name;
+    head.innerHTML = `<span style="color:var(--text-5);font-size:20px;font-weight:600">#</span><span class="name">${esc(name)}</span>`;
+  }
+  wrap.appendChild(head);
+  const msgs = document.createElement('div');
+  msgs.className = 'messages'; msgs.id = 'messages';
+  wrap.appendChild(msgs);
+  const comp = document.createElement('div');
+  comp.className = 'composer';
+  const placeholder = isDM && peer ? `${t('type_to')} @${peer.username}` : t('type_message');
+  comp.innerHTML = `<div class="composer-inner"><textarea id="msgInput" rows="1" placeholder="${esc(placeholder)}"></textarea><button class="send-btn" id="sendBtn">➤</button></div>`;
+  wrap.appendChild(comp);
+  setTimeout(()=>{
+    const ta = $('#msgInput'), btn = $('#sendBtn');
+    if (!ta) return;
+    ta.focus();
+    ta.addEventListener('input', ()=>{
+      ta.style.height = 'auto';
+      ta.style.height = Math.min(ta.scrollHeight,200)+'px';
+      btn.classList.toggle('show', ta.value.trim().length > 0);
+    });
+    ta.addEventListener('keydown', e=>{
+      if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendCurrentMessage(); }
+    });
+    btn.onclick = sendCurrentMessage;
+  }, 0);
+  return wrap;
+}
+function sendCurrentMessage(){
+  const conv = state.activeConv;
+  if (!conv) return;
+  const ta = $('#msgInput'); if (!ta) return;
+  const text = ta.value.trim(); if (!text) return;
+  ta.value = ''; ta.style.height = 'auto';
+  $('#sendBtn').classList.remove('show');
+  appendMessage(conv,{id:uid(),from:myUsername,text,time:Date.now()});
+  renderMessages();
+}
+function renderMessages(){
+  const box = $('#messages');
+  if (!box) return;
+  const conv = state.activeConv;
+  const list = getMessages(conv);
+  box.innerHTML = '';
+  if (!list.length){
+    box.innerHTML = `<div class="empty-state" style="padding:40px 20px"><div class="big">✦</div><div class="title">Начало беседы</div></div>`;
+    return;
+  }
+  let lastFrom = null, lastTime = 0;
+  list.forEach((m,i)=>{
+    if (m.sys){
+      const s = document.createElement('div');
+      s.className = 'sys-msg'; s.textContent = m.text;
+      s.style.animationDelay = Math.min(i*15, 300) + 'ms';
+      box.appendChild(s);
+      lastFrom = null; lastTime = 0;
+      return;
+    }
+    const profile = getProfile(m.from);
+    const compact = m.from === lastFrom && (m.time - lastTime) < 5*60*1000;
+    const row = document.createElement('div');
+    row.className = 'msg' + (compact ? '' : ' group-start');
+    row.style.animationDelay = Math.min(i*15, 300) + 'ms';
+    const leftSlot = compact ? `<span style="font-size:10px;color:var(--text-5);padding-top:8px;font-family:var(--mono)">${fmtTime(m.time)}</span>`
+      : avatarHTML(profile,'',false);
+    const head = compact ? '' : `
+      <div class="msg-head">
+        <span class="msg-author" data-profile="${esc(m.from)}">${nameHTML(profile)}</span>
+        <span class="msg-handle">@${esc(m.from)}</span>
+        <span class="msg-time">${fmtTime(m.time)}</span>
+      </div>`;
+    row.innerHTML = `
+      <div class="av-slot" data-profile="${esc(m.from)}">${leftSlot}</div>
+      <div class="msg-body">${head}<div class="msg-text">${esc(m.text)}</div></div>`;
+    box.appendChild(row);
+    lastFrom = m.from;
+    lastTime = m.time;
+  });
+  box.scrollTop = box.scrollHeight;
+}
+
+/* MODAL */
+function openModal(html){ $('#modalContent').innerHTML = html; $('#backdrop').classList.add('show'); }
+function closeModal(){ $('#backdrop').classList.remove('show'); $('#modalContent').innerHTML = ''; }
+$('#backdrop').addEventListener('click', e => { if (e.target.id === 'backdrop') closeModal(); });
+document.addEventListener('keydown', e=>{
+  if (e.key === 'Escape'){
+    if ($('#backdrop').classList.contains('show')) closeModal();
+    if ($('#peOverlay').classList.contains('show')) closeProfileEditor();
+    if ($('#settingsOverlay').classList.contains('show')) closeSettings();
+  }
+});
+function openProfilePopout(user){
+  if (!user) return;
+  const isMe = user.username === myUsername;
+  const online = isOnline(user.username);
+  const eff = user.profileEffect && user.profileEffect !== 'none' ? ' pe-effect-'+user.profileEffect : '';
+  const games = (user.favGames||[]).map(getGame).filter(Boolean);
+  openModal(`
+    <div style="margin:-24px -24px 0 -24px;border-radius:8px 8px 0 0;overflow:hidden">
+      <div class="pe-card-banner ${eff}" style="${bannerStyle(user)}">
+        <div class="pe-bg-anim" style="--c1:${user.nameColor1||'#5865f2'};--c2:${user.nameColor2||'#00d9ff'}"></div>
+      </div>
+      <div style="padding:0 20px 20px;position:relative">
+        <div style="margin-top:-52px;margin-bottom:12px;display:inline-flex;position:relative;z-index:2">
+          ${avatarHTML(user,'xxl',false)}
+        </div>
+        <div style="font-size:22px;font-weight:700;color:var(--text);display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+          ${nameHTML(user)}<span style="font-size:13px;color:var(--text-4);font-weight:400;font-family:var(--mono)">@${esc(user.username)}</span>
+        </div>
+        ${user.pronouns ? `<div style="font-size:12px;color:var(--text-4);margin-top:2px">${esc(user.pronouns)}</div>` : ''}
+        <div style="margin-top:12px;display:inline-flex;align-items:center;gap:8px;background:#1e1f22;padding:5px 12px;border-radius:20px;font-size:12px;color:var(--text-3)">
+          <span style="width:8px;height:8px;border-radius:50%;background:${online?'var(--green)':'#80848e'}"></span>
+          ${esc(user.customStatus || (online?t('online'):t('offline')))}
+        </div>
+        ${user.bio ? `
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid #3f4147;animation:fadeUp .35s ease both">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4);letter-spacing:.02em;margin-bottom:8px">${t('about_me')}</div>
+            <div style="font-size:14px;color:var(--text-3);line-height:1.5;white-space:pre-wrap">${esc(user.bio)}</div>
+          </div>` : ''}
+        ${games.length ? `
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid #3f4147;animation:fadeUp .35s ease both;animation-delay:.1s">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-4);letter-spacing:.02em;margin-bottom:10px">${t('fav_games')}</div>
+            <div class="pe-games-grid">
+              ${games.slice(0,6).map((g,i)=>`
+                <div class="pe-game" title="${esc(g.name)}" style="animation-delay:${i*30}ms">
+                  ${gameCoverHTML(g)}
+                  <div class="game-name">${esc(g.name)}</div>
+                </div>`).join('')}
+            </div>
+          </div>` : ''}
+        <div style="display:flex;gap:8px;margin-top:16px;animation:fadeUp .35s ease both;animation-delay:.15s">
+          ${isMe ? `<button class="btn primary" id="poEdit" style="flex:1">${t('edit_profile')}</button>`
+            : `<button class="btn primary" id="poMsg" style="flex:1">${t('message')}</button>
+               <button class="btn" id="poCall">${t('call')}</button>`}
+        </div>
+      </div>
+    </div>
+  `);
+  if (isMe){ $('#poEdit').onclick = ()=>{ closeModal(); setTimeout(openProfileEditor,80); }; }
+  else {
+    $('#poMsg').onclick = ()=>{ closeModal(); state.activeServer=null; state.activeConv=convKeyDM(myUsername,user.username); saveState(); render(); };
+    $('#poCall').onclick = ()=>{ closeModal(); setTimeout(()=>startCall(user),80); };
+  }
+}
+document.addEventListener('click', e=>{
+  const el = e.target.closest('[data-profile]');
+  if (!el) return;
+  const u = el.dataset.profile;
+  if (!u) return;
+  openProfilePopout(getProfile(u));
+});
+
+/* PROFILE EDITOR */
+let peState = null;
+let peTab = 'general';
+const PE_TABS = [
+  {id:'general', label:'Основное', icon:'👤'},
+  {id:'avatar', label:'Аватар', icon:'◐'},
+  {id:'banner', label:'Баннер', icon:'▤'},
+  {id:'decorations', label:'Украшения', icon:'✨'},
+  {id:'frames', label:'Рамки', icon:'⬭'},
+  {id:'name', label:'Стиль имени', icon:'Aa'},
+  {id:'background', label:'Фон профиля', icon:'◧'},
+  {id:'games', label:'Любимые игры', icon:'🎮'},
+];
+function openProfileEditor(){
+  if (!state) return;
+  peState = JSON.parse(JSON.stringify(state.me));
+  peTab = 'general';
+  renderProfileEditor();
+  requestAnimationFrame(()=>$('#peOverlay').classList.add('show'));
+}
+function closeProfileEditor(){ $('#peOverlay').classList.remove('show'); setTimeout(()=>{ peState = null; }, 250); }
+function saveProfileEditor(){
+  if (!peState) return;
+  Object.assign(state.me, peState);
+  saveState(); renderMe(); renderSidebar(); renderMain();
+  toast(t('saved'),'','success', 2000);
+}
+function renderProfileEditor(){
+  const ov = $('#peOverlay');
+  ov.innerHTML = `
+    <div class="pe-topbar">
+      <div class="title">${t('edit_profile')}</div>
+      <button class="pe-btn" id="peClose">${t('cancel')}</button>
+      <button class="pe-btn primary" id="peSave">${t('save_profile')}</button>
+    </div>
+    <div class="pe-layout">
+      <div class="pe-side-left">
+        ${PE_TABS.map((tab,i) => `
+          <div class="pe-cat ${peTab===tab.id?'active':''}" data-tab="${tab.id}" style="animation-delay:${i*30}ms">
+            <span class="ico">${tab.icon}</span>
+            <span>${tab.label}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div class="pe-side-center">
+        <div class="pe-preview-label">Предпросмотр</div>
+        <div id="pePreviewCard"></div>
+      </div>
+      <div class="pe-side-right" id="peOptions"></div>
+    </div>`;
+  $$('#peOverlay [data-tab]').forEach(el => { el.onclick = ()=>{ peTab = el.dataset.tab; renderProfileEditor(); }; });
+  $('#peClose').onclick = closeProfileEditor;
+  $('#peSave').onclick = saveProfileEditor;
+  renderPreviewCard();
+  renderOptions();
+}
+function renderPreviewCard(){
+  const c = $('#pePreviewCard');
+  if (!c) return;
+  const p = peState;
+  const eff = p.profileEffect && p.profileEffect !== 'none' ? ' pe-effect-'+p.profileEffect : '';
+  const games = (p.favGames||[]).map(getGame).filter(Boolean);
+  c.innerHTML = `
+    <div class="pe-card">
+      <div class="pe-card-banner ${eff}" style="${bannerStyle(p)}">
+        <div class="pe-bg-anim" style="--c1:${p.nameColor1};--c2:${p.nameColor2}"></div>
+      </div>
+      <div class="pe-card-body">
+        <div class="pe-card-avatar">${avatarHTML(p,'lg',false)}</div>
+        <div class="pe-card-name">${nameHTML(p)}</div>
+        <div class="pe-card-handle">@${esc(p.username)}</div>
+        ${p.pronouns ? `<div class="pe-card-pron">${esc(p.pronouns)}</div>` : ''}
+        <div class="pe-card-actions">
+          <button class="pe-card-btn">${t('message')}</button>
+          <button class="pe-card-icon-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </button>
+        </div>
+        ${p.bio ? `
+          <div class="pe-card-block">
+            <div class="pe-card-block-title">${t('about_me')}</div>
+            <div class="pe-card-block-text">${esc(p.bio)}</div>
+          </div>` : ''}
+        ${games.length ? `
+          <div class="pe-card-block">
+            <div class="pe-card-block-title">${t('fav_games')}</div>
+            <div class="pe-games-grid">
+              ${games.slice(0,6).map(g=>`
+                <div class="pe-game" title="${esc(g.name)}">
+                  ${gameCoverHTML(g)}
+                  <div class="game-name">${esc(g.name)}</div>
+                </div>`).join('')}
+            </div>
+          </div>` : ''}
+      </div>
+    </div>`;
+}
+function renderOptions(){
+  const o = $('#peOptions');
+  if (!o) return;
+  if (peTab === 'general') return renderGeneral();
+  if (peTab === 'avatar') return renderAvatarTab();
+  if (peTab === 'banner') return renderBannerTab();
+  if (peTab === 'decorations') return renderDecorations();
+  if (peTab === 'frames') return renderFrames();
+  if (peTab === 'name') return renderName();
+  if (peTab === 'background') return renderBackground();
+  if (peTab === 'games') return renderGames();
+}
+function renderGeneral(){
+  const p = peState;
+  const o = $('#peOptions');
+  o.innerHTML = `
+    <div class="pe-panel-title">${t('general')}</div>
+    <div class="pe-panel-desc">Базовые настройки вашего профиля</div>
+    <div class="pe-field">
+      <label class="pe-field-label">${t('display_name')}</label>
+      <input class="pe-input" id="peDisplayName" value="${esc(p.displayName)}" maxlength="24">
+    </div>
+    <div class="pe-field">
+      <label class="pe-field-label">${t('pronouns')}</label>
+      <input class="pe-input" id="pePron" value="${esc(p.pronouns||'')}" maxlength="20" placeholder="he/him">
+    </div>
+    <div class="pe-field">
+      <label class="pe-field-label">${t('custom_status')}</label>
+      <input class="pe-input" id="peCustom" value="${esc(p.customStatus||'')}" maxlength="40">
+    </div>
+    <div class="pe-field">
+      <label class="pe-field-label">${t('bio')}</label>
+      <textarea class="pe-textarea" id="peBio" maxlength="160">${esc(p.bio||'')}</textarea>
+    </div>`;
+  $('#peDisplayName').oninput = e => { peState.displayName = e.target.value; renderPreviewCard(); };
+  $('#pePron').oninput = e => { peState.pronouns = e.target.value; renderPreviewCard(); };
+  $('#peCustom').oninput = e => { peState.customStatus = e.target.value; };
+  $('#peBio').oninput = e => { peState.bio = e.target.value; renderPreviewCard(); };
+}
+function renderAvatarTab(){
+  const p = peState;
+  const o = $('#peOptions');
+  o.innerHTML = `
+    <div class="pe-panel-title">${t('avatar')}</div>
+    <div class="pe-panel-desc">Загрузите картинку с ПК или выберите emoji / цвет</div>
+    ${p.avatarData ? `
+      <div class="pe-upload-preview">
+        <img src="${esc(p.avatarData)}" alt="">
+        <div class="ovl"><button id="avatarRemove">${t('remove')}</button></div>
+      </div>
+    ` : ''}
+    <div class="pe-upload" id="avatarUpload">
+      <div class="up-ico">📁</div>
+      <div class="up-title">${t('pick_file')}</div>
+      <div class="up-hint">PNG, JPG, GIF, WEBP — до 5 МБ</div>
+    </div>
+    <input type="file" id="avatarFile" accept="image/*" style="display:none">
+    <div class="pe-field" style="margin-top:20px;animation-delay:.1s">
+      <label class="pe-field-label">Emoji (вместо картинки)</label>
+      <input class="pe-input" id="peEmoji" value="${esc(p.avatarEmoji||'')}" maxlength="4" placeholder="😎">
+    </div>
+    <div class="pe-field" style="animation-delay:.15s">
+      <label class="pe-field-label">Цвета градиента</label>
+      <div class="pe-color-row">
+        <input type="color" class="pe-color" id="peAvc1" value="${p.avatarColor1}">
+        <input type="color" class="pe-color" id="peAvc2" value="${p.avatarColor2}">
+      </div>
+    </div>`;
+  $('#avatarUpload').onclick = ()=> $('#avatarFile').click();
+  const upload = $('#avatarUpload');
+  upload.addEventListener('dragover', e => { e.preventDefault(); upload.classList.add('drag'); });
+  upload.addEventListener('dragleave', ()=> upload.classList.remove('drag'));
+  upload.addEventListener('drop', e => {
+    e.preventDefault(); upload.classList.remove('drag');
+    const f = e.dataTransfer.files[0]; if (f) handleAvatarFile(f);
+  });
+  $('#avatarFile').onchange = e => { const f = e.target.files[0]; if (f) handleAvatarFile(f); };
+  function handleAvatarFile(f){
+    if (f.size > 5*1024*1024){ toast('Файл слишком большой', 'Максимум 5 МБ', 'error'); return; }
+    fileToDataUrl(f, 512, url => { peState.avatarData = url; renderOptions(); renderPreviewCard(); });
+  }
+  const rm = $('#avatarRemove'); if (rm) rm.onclick = ()=>{ peState.avatarData = null; renderOptions(); renderPreviewCard(); };
+  $('#peEmoji').oninput = e => { peState.avatarEmoji = e.target.value.trim() || null; if (peState.avatarEmoji) peState.avatarData = null; renderPreviewCard(); };
+  $('#peAvc1').oninput = e => { peState.avatarColor1 = e.target.value; renderPreviewCard(); };
+  $('#peAvc2').oninput = e => { peState.avatarColor2 = e.target.value; renderPreviewCard(); };
+}
+function renderBannerTab(){
+  const p = peState;
+  const o = $('#peOptions');
+  o.innerHTML = `
+    <div class="pe-panel-title">${t('banner')}</div>
+    <div class="pe-panel-desc">Загрузите GIF или картинку с ПК, либо выберите градиент</div>
+    ${p.bannerData ? `
+      <div class="pe-upload-preview banner">
+        <img src="${esc(p.bannerData)}" alt="">
+        <div class="ovl"><button id="bannerRemove">${t('remove')}</button></div>
+      </div>
+    ` : ''}
+    <div class="pe-upload" id="bannerUpload">
+      <div class="up-ico">🖼</div>
+      <div class="up-title">${t('pick_file')}</div>
+      <div class="up-hint">GIF анимируется автоматически. До 10 МБ</div>
+    </div>
+    <input type="file" id="bannerFile" accept="image/*,.gif" style="display:none">
+    <div class="pe-field" style="margin-top:20px;animation-delay:.1s">
+      <label class="pe-field-label">Или градиент</label>
+      <div class="pe-color-row">
+        <input type="color" class="pe-color" id="peBn1" value="${p.bannerColor1}">
+        <input type="color" class="pe-color" id="peBn2" value="${p.bannerColor2}">
+      </div>
+    </div>`;
+  $('#bannerUpload').onclick = ()=> $('#bannerFile').click();
+  const upload = $('#bannerUpload');
+  upload.addEventListener('dragover', e => { e.preventDefault(); upload.classList.add('drag'); });
+  upload.addEventListener('dragleave', ()=> upload.classList.remove('drag'));
+  upload.addEventListener('drop', e => {
+    e.preventDefault(); upload.classList.remove('drag');
+    const f = e.dataTransfer.files[0]; if (f) handleBannerFile(f);
+  });
+  $('#bannerFile').onchange = e => { const f = e.target.files[0]; if (f) handleBannerFile(f); };
+  function handleBannerFile(f){
+    if (f.size > 10*1024*1024){ toast('Файл слишком большой', 'Максимум 10 МБ', 'error'); return; }
+    fileToDataUrl(f, 1000, url => { peState.bannerData = url; renderOptions(); renderPreviewCard(); });
+  }
+  const rm = $('#bannerRemove'); if (rm) rm.onclick = ()=>{ peState.bannerData = null; renderOptions(); renderPreviewCard(); };
+  $('#peBn1').oninput = e => { peState.bannerColor1 = e.target.value; peState.bannerData = null; renderPreviewCard(); };
+  $('#peBn2').oninput = e => { peState.bannerColor2 = e.target.value; peState.bannerData = null; renderPreviewCard(); };
+}
+function renderDecorations(){
+  const p = peState;
+  const o = $('#peOptions');
+  const tier = getTier(p.decoration);
+  const items = DECORATIONS.filter(d => d.tier === tier);
+  o.innerHTML = `
+    <div class="pe-panel-title">${t('decorations')} аватара</div>
+    <div class="pe-panel-desc">Выберите стиль украшения вокруг аватара</div>
+    <div class="pe-deco-tabs">
+      <button data-tier="1d" class="${tier==='1d'?'active':''}">1D</button>
+      <button data-tier="2d" class="${tier==='2d'?'active':''}">2D</button>
+      <button data-tier="3d" class="${tier==='3d'?'active':''}">3D</button>
+    </div>
+    <div class="pe-deco-grid">
+      ${items.map((d,i)=>`
+        <div class="pe-deco-item ${p.decoration===d.id?'active':''}" data-deco="${d.id}" style="animation-delay:${i*20}ms">
+          <div class="demo av-deco deco-${tier}-${d.id}" style="--c1:${p.nameColor1};--c2:${p.nameColor2}"></div>
+          <div class="demo-label">${d.name}</div>
+        </div>`).join('')}
+    </div>`;
+  $$('#peOptions [data-tier]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const tierId = btn.dataset.tier;
+      const first = DECORATIONS.find(x => x.tier === tierId);
+      if (first) peState.decoration = first.id;
+      renderOptions(); renderPreviewCard();
+    };
+  });
+  $$('#peOptions [data-deco]').forEach(el=>{
+    el.onclick = ()=>{ peState.decoration = el.dataset.deco; renderOptions(); renderPreviewCard(); };
+  });
+}
+function renderFrames(){
+  const p = peState;
+  const o = $('#peOptions');
+  o.innerHTML = `
+    <div class="pe-panel-title">${t('frames')}</div>
+    <div class="pe-panel-desc">Рамка вокруг аватара</div>
+    <div class="pe-deco-grid">
+      ${FRAMES.map((f,i)=>`
+        <div class="pe-deco-item ${p.frame===f.id?'active':''}" data-frame="${f.id}" style="animation-delay:${i*25}ms">
+          <div class="demo av-frame frame-${f.id}" style="--c1:${p.nameColor1};--c2:${p.nameColor2}"></div>
+          <div class="demo-label">${f.name}</div>
+        </div>`).join('')}
+    </div>`;
+  $$('#peOptions [data-frame]').forEach(el=>{
+    el.onclick = ()=>{ peState.frame = el.dataset.frame; renderOptions(); renderPreviewCard(); };
+  });
+}
+function renderName(){
+  const p = peState;
+  const o = $('#peOptions');
+  o.innerHTML = `
+    <div class="pe-panel-title">${t('name_style')}</div>
+    <div class="pe-panel-desc">Эффект и цвет вашего имени</div>
+    <div class="pe-field">
+      <label class="pe-field-label">Эффект</label>
+      <div class="pe-deco-grid" style="grid-template-columns:repeat(3,1fr)">
+        ${NAME_EFFECTS.map((f,i)=>`
+          <div class="pe-deco-item ${p.nameEffect===f.id?'active':''}" data-nameeff="${f.id}" style="aspect-ratio:auto;padding:10px;animation-delay:${i*20}ms">
+            <div class="${f.id==='none'?'':'ne-'+f.id}" style="font-size:14px;font-weight:600;--c1:${p.nameColor1};--c2:${p.nameColor2}">Aa</div>
+            <div class="demo-label">${f.name}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="pe-field">
+      <label class="pe-field-label">Цвета имени</label>
+      <div class="pe-color-row">
+        <input type="color" class="pe-color" id="peNc1" value="${p.nameColor1}">
+        <input type="color" class="pe-color" id="peNc2" value="${p.nameColor2}">
+      </div>
+    </div>`;
+  $$('#peOptions [data-nameeff]').forEach(el=>{
+    el.onclick = ()=>{ peState.nameEffect = el.dataset.nameeff; renderOptions(); renderPreviewCard(); };
+  });
+  $('#peNc1').oninput = e => { peState.nameColor1 = e.target.value; renderPreviewCard(); renderOptions(); };
+  $('#peNc2').oninput = e => { peState.nameColor2 = e.target.value; renderPreviewCard(); renderOptions(); };
+}
+function renderBackground(){
+  const p = peState;
+  const o = $('#peOptions');
+  o.innerHTML = `
+    <div class="pe-panel-title">${t('background')}</div>
+    <div class="pe-panel-desc">Анимированный фон карточки профиля</div>
+    <div class="pe-bg-grid">
+      ${PROFILE_EFFECTS.map((f,i)=>`
+        <div class="pe-bg-item ${p.profileEffect===f.id?'active':''}" data-bg="${f.id}" style="animation-delay:${i*25}ms">
+          <div class="pe-effect-${f.id}" style="position:absolute;inset:0;background:#1e1f22">
+            <div class="pe-bg-anim" style="--c1:${p.nameColor1};--c2:${p.nameColor2}"></div>
+          </div>
+          <div class="pe-bg-label">${f.name}</div>
+        </div>`).join('')}
+    </div>`;
+  $$('#peOptions [data-bg]').forEach(el=>{
+    el.onclick = ()=>{ peState.profileEffect = el.dataset.bg; peState.bannerData = null; renderOptions(); renderPreviewCard(); };
+  });
+}
+function renderGames(){
+  const p = peState;
+  const o = $('#peOptions');
+  const current = p.favGames || [];
+  o.innerHTML = `
+    <div class="pe-panel-title">${t('fav_games')}</div>
+    <div class="pe-panel-desc">Выбрано: ${current.length}/20</div>
+    <div class="pe-game-picker">
+      ${GAME_LIBRARY.map((g,i)=>{
+        const active = current.includes(g.id);
+        return `
+          <div class="pe-game-pick ${active?'active':''}" data-game="${g.id}" style="animation-delay:${Math.min(i*15,250)}ms">
+            ${g.cover ? `<img src="${esc(g.cover)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="p-emoji" style="display:none">${esc(g.emoji||'🎮')}</div>` : `<div class="p-emoji">${esc(g.emoji||'🎮')}</div>`}
+            <div class="p-name">${esc(g.name)}</div>
+          </div>`;
+      }).join('')}
+    </div>`;
+  $$('#peOptions [data-game]').forEach(el=>{
+    el.onclick = ()=>{
+      const id = el.dataset.game;
+      if (!peState.favGames) peState.favGames = [];
+      if (peState.favGames.includes(id)) peState.favGames = peState.favGames.filter(x => x !== id);
+      else if (peState.favGames.length < 20) peState.favGames.push(id);
+      else { toast('20/20','','error'); return; }
+      renderOptions(); renderPreviewCard();
+    };
+  });
+}
+
+/* SETTINGS */
+let settingsOpen = false, settingsTab = 'voice';
+function openSettings(){ settingsOpen = true; renderSettingsNav(); renderSettingsBody(); requestAnimationFrame(()=>$('#settingsOverlay').classList.add('show')); }
+function closeSettings(){ settingsOpen = false; $('#settingsOverlay').classList.remove('show'); stopMicTest(); stopCameraTest(); }
+function renderSettingsNav(){
+  const nav = $('#settingsNav');
+  const sections = [
+    {group:'SISKORE', items:[
+      {id:'account',label:t('account'),ico:'◉'},
+      {id:'profile',label:t('profile'),ico:'◐'},
+      {id:'voice',label:t('voice_video'),ico:'◊'},
+    ]},
+    {group:'APP', items:[
+      {id:'language',label:t('language'),ico:'⌘'},
+    ]},
+  ];
+  nav.innerHTML = '';
+  sections.forEach(sec=>{
+    const lbl = document.createElement('div');
+    lbl.className = 'settings-nav-section';
+    lbl.textContent = sec.group;
+    nav.appendChild(lbl);
+    sec.items.forEach((it,i)=>{
+      const el = document.createElement('div');
+      el.className = 'settings-nav-item' + (settingsTab === it.id ? ' active' : '');
+      el.style.animationDelay = (i*30) + 'ms';
+      el.innerHTML = `<span style="width:18px;text-align:center;font-size:14px">${it.ico}</span><span>${it.label}</span>`;
+      el.onclick = ()=>{ settingsTab = it.id; renderSettingsNav(); renderSettingsBody(); };
+      nav.appendChild(el);
+    });
+  });
+  const out = document.createElement('div');
+  out.className = 'settings-nav-item';
+  out.style.cssText = 'margin-top:20px;color:var(--red)';
+  out.innerHTML = `<span style="width:18px;text-align:center;font-size:14px">⏻</span><span>${t('logout')}</span>`;
+  out.onclick = ()=>{ if (confirm(t('logout')+'?')){ clearSession(); location.reload(); } };
+  nav.appendChild(out);
+}
+function renderSettingsBody(){
+  const b = $('#settingsBody');
+  switch(settingsTab){
+    case 'account': b.innerHTML = viewAccount(); wireAccount(); break;
+    case 'profile': b.innerHTML = viewProfileSettings(); wireProfileSettings(); break;
+    case 'voice': b.innerHTML = viewVoice(); wireVoice(); break;
+    case 'language': b.innerHTML = viewLanguage(); wireLanguage(); break;
+    default: b.innerHTML = '<div class="settings-title">—</div>';
+  }
+}
+function viewAccount(){
+  const u = auth.users[myUsername] || {};
+  return `
+    <div class="settings-title">${t('account')}</div>
+    <div class="settings-row">
+      <div class="settings-row-label">${t('username')}<span class="sub">@${esc(myUsername)}</span></div>
+    </div>
+    <div class="settings-row">
+      <div class="settings-row-label">${t('display_name')}</div>
+      <div style="color:var(--text-3);font-family:var(--mono);font-size:14px">${esc(state.me.displayName)}</div>
+      <button class="settings-btn" data-edit="displayName">Изменить</button>
+    </div>
+    <div class="settings-row">
+      <div class="settings-row-label">${t('email')}</div>
+      <div style="color:var(--text-3);font-family:var(--mono);font-size:14px">${esc(u.email||'—')}</div>
+    </div>`;
+}
+function wireAccount(){
+  $$('#settingsBody [data-edit="displayName"]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const v = prompt('Новое имя:', state.me.displayName);
+      if (v && v.trim()){ state.me.displayName = v.trim().slice(0,24); saveState(); renderMe(); renderSettingsBody(); }
+    };
+  });
+}
+function viewProfileSettings(){
+  return `
+    <div class="settings-title">${t('profile')}</div>
+    <p style="color:var(--text-4);margin-bottom:20px;font-size:14px">
+      → <a id="openPE">${t('edit_profile')}</a>
+    </p>`;
+}
+function wireProfileSettings(){
+  const a = $('#openPE'); if (a) a.onclick = ()=>{ closeSettings(); setTimeout(openProfileEditor, 80); };
+}
+let micStream = null, micAnalyser = null, micData = null, micRAF = null, micAC = null;
+let cameraStream = null, cameraRAF = null, lastCamT = 0, camFrames = 0;
+function viewVoice(){
+  return `
+    <div class="settings-title">${t('voice_video')}</div>
+    <div class="settings-row">
+      <div class="settings-row-label">${t('mic')}<span class="sub">Устройство ввода с вашего ПК</span></div>
+      <select class="settings-select" id="micSelect"></select>
+    </div>
+    <div class="settings-row">
+      <div class="settings-row-label">${t('mic_volume')}</div>
+      <div class="mic-meter"><div class="mic-meter-fill" id="micLevel"></div></div>
+      <button class="settings-btn" id="micTestBtn">${t('test_mic')}</button>
+    </div>
+    <div class="settings-row">
+      <div class="settings-row-label">${t('noise_suppression')}<span class="sub">Убирает фоновый шум</span></div>
+      <label class="switch"><input type="checkbox" id="setNoise" ${userSettings.noiseSuppression?'checked':''}><span class="slider"></span></label>
+    </div>
+    <div class="settings-row">
+      <div class="settings-row-label">${t('echo_cancellation')}<span class="sub">Убирает эхо</span></div>
+      <label class="switch"><input type="checkbox" id="setEcho" ${userSettings.echoCancellation?'checked':''}><span class="slider"></span></label>
+    </div>
+    <div class="settings-row">
+      <div class="settings-row-label">${t('auto_gain')}<span class="sub">Выравнивает громкость</span></div>
+      <label class="switch"><input type="checkbox" id="setGain" ${userSettings.autoGainControl?'checked':''}><span class="slider"></span></label>
+    </div>
+    <div class="settings-row" style="margin-top:20px">
+      <div class="settings-row-label">${t('screen_fps')}<span class="sub">Частота кадров при демонстрации экрана</span></div>
+      <select class="settings-select" id="setFps">
+        <option value="30" ${userSettings.screenFps===30?'selected':''}>30 FPS</option>
+        <option value="60" ${userSettings.screenFps===60?'selected':''}>60 FPS</option>
+        <option value="75" ${userSettings.screenFps===75?'selected':''}>75 FPS (рекомендуется)</option>
+        <option value="90" ${userSettings.screenFps===90?'selected':''}>90 FPS</option>
+        <option value="120" ${userSettings.screenFps===120?'selected':''}>120 FPS</option>
+      </select>
+    </div>
+    <div class="settings-row">
+      <div class="settings-row-label">${t('video_quality')}<span class="sub">Разрешение при захвате экрана</span></div>
+      <select class="settings-select" id="setQuality">
+        <option value="720">720p</option>
+        <option value="1080" selected>1080p (Full HD)</option>
+        <option value="1440">1440p (2K)</option>
+      </select>
+    </div>
+    <div class="settings-row">
+      <div class="settings-row-label">Камера</div>
+      <select class="settings-select" id="camSelect"></select>
+    </div>
+    <div class="camera-preview" id="camPreview">
+      <video id="camVideo" autoplay playsinline muted></video>
+      <div class="cam-ph">
+        <div style="font-size:32px;opacity:.4">◐</div>
+        <div style="margin-top:8px;font-size:13px;color:#6d6f78">Проверка камеры</div>
+        <button class="settings-btn" id="camTestBtn" style="margin-top:12px">Включить камеру</button>
+      </div>
+      <div class="fps-badge" id="camFps">-- FPS</div>
+    </div>`;
+}
+function wireVoice(){
+  const micSel = $('#micSelect'), camSel = $('#camSelect');
+  async function enumerate(){
+    try{
+      try{ const s = await navigator.mediaDevices.getUserMedia({audio:true}); s.getTracks().forEach(t=>t.stop()); }catch(e){}
+      try{ const s = await navigator.mediaDevices.getUserMedia({video:true}); s.getTracks().forEach(t=>t.stop()); }catch(e){}
+      const devs = await navigator.mediaDevices.enumerateDevices();
+      const mics = devs.filter(d => d.kind === 'audioinput');
+      const cams = devs.filter(d => d.kind === 'videoinput');
+      const savedMic = userSettings.micDeviceId || '';
+      micSel.innerHTML = `<option value="">${t('default_device')}</option>` +
+        mics.map(d=>`<option value="${d.deviceId}" ${d.deviceId===savedMic?'selected':''}>${esc(d.label||'Микрофон '+d.deviceId.slice(0,4))}</option>`).join('');
+      camSel.innerHTML = `<option value="">${t('default_device')}</option>` +
+        (cams.length ? cams.map(d=>`<option value="${d.deviceId}">${esc(d.label||'Камера')}</option>`).join('') : `<option disabled>${t('not_set')}</option>`);
+    }catch(e){}
+  }
+  enumerate();
+  if (navigator.mediaDevices && navigator.mediaDevices.addEventListener){
+    navigator.mediaDevices.addEventListener('devicechange', enumerate);
+  }
+  micSel.onchange = ()=>{
+    userSettings.micDeviceId = micSel.value || null;
+    saveUserSettings();
+    if (micStream) startMicTest();
+    toast('Микрофон', 'Устройство выбрано', 'success', 2000);
+  };
+  $('#micTestBtn').onclick = ()=>{ if (micStream) stopMicTest(); else startMicTest(); };
+  $('#camTestBtn').onclick = ()=>{ if (cameraStream) stopCameraTest(); else startCameraTest(); };
+  $('#setNoise').onchange = e => { userSettings.noiseSuppression = e.target.checked; saveUserSettings(); toast('Шумоподавление', e.target.checked?'Включено':'Выключено','success',1500); };
+  $('#setEcho').onchange = e => { userSettings.echoCancellation = e.target.checked; saveUserSettings(); };
+  $('#setGain').onchange = e => { userSettings.autoGainControl = e.target.checked; saveUserSettings(); };
+  $('#setFps').onchange = e => { userSettings.screenFps = parseInt(e.target.value, 10); saveUserSettings(); toast('FPS демонстрации', userSettings.screenFps + ' FPS', 'success', 1500); };
+
+  async function startMicTest(){
+    stopMicTest();
+    try{
+      const constraints = {
+        audio: {
+          echoCancellation: userSettings.echoCancellation,
+          noiseSuppression: userSettings.noiseSuppression,
+          autoGainControl: userSettings.autoGainControl,
+        }
+      };
+      if (userSettings.micDeviceId) constraints.audio.deviceId = { exact: userSettings.micDeviceId };
+      micStream = await navigator.mediaDevices.getUserMedia(constraints);
+      micAC = new (window.AudioContext||window.webkitAudioContext)();
+      const src = micAC.createMediaStreamSource(micStream);
+      micAnalyser = micAC.createAnalyser(); micAnalyser.fftSize = 512; micAnalyser.smoothingTimeConstant = .78;
+      src.connect(micAnalyser); micData = new Uint8Array(micAnalyser.frequencyBinCount);
+      const loop = ()=>{
+        if (!micAnalyser) return;
+        micAnalyser.getByteFrequencyData(micData);
+        let s = 0; for (let i=0;i<micData.length;i++) s += micData[i];
+        const el = $('#micLevel'); if (el) el.style.width = Math.min(100,(s/micData.length)*1.4)+'%';
+        micRAF = requestAnimationFrame(loop);
+      };
+      loop();
+      $('#micTestBtn').textContent = t('stop_test');
+      toast('Микрофон активен', 'Шумоподавление: ' + (userSettings.noiseSuppression?'ON':'OFF'), 'success', 2000);
+    }catch(e){ toast('Ошибка', e.message, 'error'); }
+  }
+  function stopMicTest(){
+    if (micRAF){ cancelAnimationFrame(micRAF); micRAF = null; }
+    if (micStream){ micStream.getTracks().forEach(t=>t.stop()); micStream = null; }
+    if (micAC){ try{ micAC.close(); }catch(e){} micAC = null; }
+    micAnalyser = null;
+    const el = $('#micLevel'); if (el) el.style.width = '0%';
+    const b = $('#micTestBtn'); if (b) b.textContent = t('test_mic');
+  }
+  window.__stopMicTest = stopMicTest;
+
+  async function startCameraTest(){
+    stopCameraTest();
+    try{
+      cameraStream = await navigator.mediaDevices.getUserMedia({video:{width:1280,height:720}});
+      const v = $('#camVideo');
+      v.srcObject = cameraStream;
+      $('#camPreview').classList.add('live');
+      $('#camTestBtn').textContent = 'Стоп';
+      lastCamT = performance.now(); camFrames = 0;
+      const loop = ()=>{
+        camFrames++;
+        const now = performance.now();
+        if (now - lastCamT >= 1000){
+          const el = $('#camFps'); if (el) el.textContent = Math.round((camFrames*1000)/(now-lastCamT)) + ' FPS';
+          camFrames = 0; lastCamT = now;
+        }
+        if (v.requestVideoFrameCallback) cameraRAF = v.requestVideoFrameCallback(loop);
+        else cameraRAF = requestAnimationFrame(loop);
+      };
+      if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(loop);
+      else requestAnimationFrame(loop);
+    }catch(e){ toast('Ошибка', e.message, 'error'); }
+  }
+  function stopCameraTest(){
+    if (cameraRAF){
+      const v = $('#camVideo');
+      if (v && v.cancelVideoFrameCallback) try{ v.cancelVideoFrameCallback(cameraRAF); }catch(e){}
+      else cancelAnimationFrame(cameraRAF);
+      cameraRAF = null;
+    }
+    if (cameraStream){ cameraStream.getTracks().forEach(t=>t.stop()); cameraStream = null; }
+    const v = $('#camVideo'); if (v) v.srcObject = null;
+    $('#camPreview').classList.remove('live');
+    const b = $('#camTestBtn'); if (b) b.textContent = 'Включить камеру';
+  }
+  window.__stopCameraTest = stopCameraTest;
+}
+const stopMicTest = () => window.__stopMicTest && window.__stopMicTest();
+const stopCameraTest = () => window.__stopCameraTest && window.__stopCameraTest();
+
+function viewLanguage(){
+  return `
+    <div class="settings-title">${t('language')}</div>
+    <div class="settings-row">
+      <div class="settings-row-label">Язык</div>
+      <select class="settings-select" id="langSel">
+        <option value="ru" ${LANG==='ru'?'selected':''}>Русский</option>
+        <option value="en" ${LANG==='en'?'selected':''}>English</option>
+        <option value="uk" ${LANG==='uk'?'selected':''}>Українська</option>
+      </select>
+    </div>`;
+}
+function wireLanguage(){
+  $('#langSel').onchange = e => { setLang(e.target.value); renderSettingsNav(); renderSettingsBody(); };
+}
+$('#settingsBtn').onclick = openSettings;
+$('#settingsClose').onclick = closeSettings;
+
+/* MIC MUTE */
+$('#micQuick').onclick = ()=>{
+  userSettings.micMuted = !userSettings.micMuted;
+  saveUserSettings();
+  renderMe();
+  if (call.localStream) call.localStream.getAudioTracks().forEach(t => t.enabled = !userSettings.micMuted);
+  if (micStream) micStream.getAudioTracks().forEach(t => t.enabled = !userSettings.micMuted);
+  toast(t('mic'), userSettings.micMuted ? '🔴 Заглушён' : '🟢 Активен', userSettings.micMuted ? 'error':'success', 2000);
+};
+$('#headphoneQuick').onclick = ()=>{
+  userSettings.headphoneMuted = !userSettings.headphoneMuted;
+  saveUserSettings();
+  toast('Звук', userSettings.headphoneMuted ? '🔇 Выкл' : '🔊 Вкл', 'success', 2000);
+};
+
+/* SERVER CREATE */
+$('#addServerBtn').onclick = ()=>{
+  openModal(`
+    <h2>Создать сервер</h2>
+    <p class="hint">Придумайте название</p>
+    <label>Название</label>
+    <input id="srvInput" placeholder="Мой сервер" maxlength="24">
+    <div class="actions">
+      <button class="btn" id="cancelSrv">${t('cancel')}</button>
+      <button class="btn primary" id="confirmSrv">${t('confirm')}</button>
+    </div>`);
+  const inp = $('#srvInput'); inp.focus();
+  const go = ()=>{
+    const name = inp.value.trim(); if (!name) return;
+    const srv = {id:'srv_'+uid(),name,emoji:initials(name),iconUrl:null,owner:myUsername,
+      channels:[{id:'ch_'+uid(),name:'общий'}]};
+    state.servers.push(srv);
+    state.activeServer = srv.id;
+    state.activeConv = convKeyChannel(srv.channels[0].id);
+    saveState(); closeModal(); render();
+  };
+  inp.addEventListener('keydown', e=>{ if (e.key === 'Enter') go(); });
+  $('#cancelSrv').onclick = closeModal;
+  $('#confirmSrv').onclick = go;
+};
+
+/* ADD FRIEND */
+function openAddFriendModal(){
+  openModal(`
+    <h2>${t('add_friend_tab')}</h2>
+    <p class="hint">Введите @юзернейм зарегистрированного пользователя</p>
+    <label>${t('username')}</label>
+    <input id="friendInput" placeholder="alex" maxlength="24" autocomplete="off">
+    <div class="err-text" id="addErr"></div>
+    <div class="actions">
+      <button class="btn" id="cancelAdd">${t('cancel')}</button>
+      <button class="btn primary" id="confirmAdd">${t('confirm')}</button>
+    </div>`);
+  const inp = $('#friendInput'); inp.focus();
+  const submit = ()=>{
+    const u = sanitizeUsername(inp.value);
+    const err = $('#addErr');
+    if (!validUsername(u)){ err.textContent = t('username_rule'); return; }
+    if (u === myUsername){ err.textContent = 'Это вы 🙂'; return; }
+    if (!auth.users[u]){ err.textContent = 'Пользователь не найден.'; return; }
+    if (getFriendsList(myUsername).includes(u)){ err.textContent = 'Уже в друзьях'; return; }
+    if ((allRequests()[u]||[]).some(r => r.from === myUsername)){ err.textContent = 'Заявка уже отправлена'; return; }
+    sendRequest(myUsername, u);
+    toast('Заявка отправлена', '@'+u, 'success');
+    closeModal();
+    renderMain();
+  };
+  inp.addEventListener('keydown', e=>{ if (e.key === 'Enter') submit(); });
+  $('#cancelAdd').onclick = closeModal;
+  $('#confirmAdd').onclick = submit;
+}
+$('#addDMFriend').onclick = openAddFriendModal;
+$('#findOrStartBtn').onclick = openAddFriendModal;
+
+/* CALL */
+const call = {active:false,peer:null,startedAt:0,tick:null,ring:null,
+  localStream:null,pc:null,isCaller:false,roomId:null,pendingIce:[],
+  sharing:false,screenStream:null,fpsRAF:null,screenFpsRAF:null};
+
+function newPC(){
+  const pc = new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
+  pc.onicecandidate = e => { if (e.candidate && call.roomId) emit('rtc_ice',{room:call.roomId,from:myUsername,candidate:e.candidate}); };
+  pc.ontrack = e => {
+    const stream = e.streams[0];
+    const v = $('#callRemoteVideo');
+    if (v && stream){
+      v.srcObject = stream;
+      if (stream.getVideoTracks().length){
+        $('#callScreen').classList.add('show');
+        $('#callAvatarWrap').style.display = 'none';
+        startRemoteFps(v);
+      }
+    }
+  };
+  pc.onconnectionstatechange = ()=>{
+    if (pc.connectionState === 'connected'){
+      $('#callStatus').textContent = 'Соединено';
+      $('#callOverlay').classList.remove('ringing');
+      if (call.ring){ clearInterval(call.ring); call.ring = null; }
+      if (!call.startedAt){ call.startedAt = Date.now(); $('#callTimer').style.display='block'; call.tick = setInterval(updateCallTimer, 250); sndJoin(); }
+    }
+  };
+  return pc;
+}
+function startRemoteFps(v){
+  let lastT = performance.now(), frames = 0;
+  const tick = ()=>{
+    frames++;
+    const now = performance.now();
+    if (now - lastT >= 1000){
+      const el = $('#callFpsBadge'); if (el) el.textContent = Math.round((frames*1000)/(now-lastT)) + ' FPS';
+      frames = 0; lastT = now;
+    }
+    if (v.requestVideoFrameCallback) call.fpsRAF = v.requestVideoFrameCallback(tick);
+    else call.fpsRAF = requestAnimationFrame(tick);
+  };
+  if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(tick);
+  else requestAnimationFrame(tick);
+}
+function getMediaConstraints(){
+  const c = {
+    audio: {
+      echoCancellation: userSettings.echoCancellation,
+      noiseSuppression: userSettings.noiseSuppression,
+      autoGainControl: userSettings.autoGainControl,
+    },
+    video: false,
+  };
+  if (userSettings.micDeviceId) c.audio.deviceId = { exact: userSettings.micDeviceId };
+  return c;
+}
+async function startCall(peer){
+  if (call.active) return;
+  call.active = true; call.peer = peer;
+  call.isCaller = true;
+  call.roomId = 'call:' + [myUsername, peer.username].sort().join('|');
+  call.pendingIce = [];
+  $('#callAvatarSlot').innerHTML = avatarHTML(peer,'xxl',false);
+  $('#callName').innerHTML = nameHTML(peer);
+  $('#callStatus').textContent = 'Вызов...';
+  $('#callTimer').style.display = 'none';
+  $('#callScreen').classList.remove('show');
+  $('#callAvatarWrap').style.display = 'flex';
+  updateCallButtons();
+  $('#callOverlay').classList.add('show','ringing');
+  try{
+    call.localStream = await navigator.mediaDevices.getUserMedia(getMediaConstraints());
+    call.localStream.getAudioTracks().forEach(t => t.enabled = !userSettings.micMuted);
+  }catch(e){ toast('Микрофон', e.message, 'error'); call.localStream = null; }
+  sndRing(); call.ring = setInterval(sndRing, 3000);
+  emit('rtc_invite',{room:call.roomId,from:myUsername,to:peer.username});
+  call.pc = newPC();
+  if (call.localStream) call.localStream.getTracks().forEach(t => call.pc.addTrack(t, call.localStream));
+  else call.pc.addTransceiver('audio',{direction:'recvonly'});
+  try{
+    const offer = await call.pc.createOffer();
+    await call.pc.setLocalDescription(offer);
+    emit('rtc_offer',{room:call.roomId,from:myUsername,to:peer.username,sdp:offer});
+  }catch(e){}
+}
+async function handleInvite(msg){
+  if (call.active) return;
+  const profile = getProfile(msg.from);
+  call.active = true; call.peer = profile;
+  call.isCaller = false; call.roomId = msg.room; call.pendingIce = [];
+  $('#callAvatarSlot').innerHTML = avatarHTML(profile,'xxl',false);
+  $('#callName').innerHTML = nameHTML(profile);
+  $('#callStatus').textContent = 'Соединено';
+  $('#callTimer').style.display = 'none';
+  $('#callScreen').classList.remove('show');
+  $('#callAvatarWrap').style.display = 'flex';
+  updateCallButtons();
+  $('#callOverlay').classList.add('show');
+  try{
+    call.localStream = await navigator.mediaDevices.getUserMedia(getMediaConstraints());
+    call.localStream.getAudioTracks().forEach(t => t.enabled = !userSettings.micMuted);
+  }catch(e){ call.localStream = null; }
+  call.pc = newPC();
+  if (call.localStream) call.localStream.getTracks().forEach(t => call.pc.addTrack(t, call.localStream));
+  for (const c of call.pendingIce){ try{ await call.pc.addIceCandidate(c); }catch(e){} }
+  call.pendingIce = [];
+}
+async function handleOffer(msg){
+  if (!call.active || call.roomId !== msg.room || call.isCaller) return;
+  try{
+    await call.pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+    for (const c of call.pendingIce){ try{ await call.pc.addIceCandidate(c); }catch(e){} }
+    call.pendingIce = [];
+    const ans = await call.pc.createAnswer();
+    await call.pc.setLocalDescription(ans);
+    emit('rtc_answer',{room:call.roomId,from:myUsername,to:msg.from,sdp:ans});
+  }catch(e){}
+}
+async function handleAnswer(msg){
+  if (!call.active || !call.isCaller || call.roomId !== msg.room) return;
+  try{
+    await call.pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+    for (const c of call.pendingIce){ try{ await call.pc.addIceCandidate(c); }catch(e){} }
+    call.pendingIce = [];
+  }catch(e){}
+}
+async function handleIce(msg){
+  if (!call.active || call.roomId !== msg.room) return;
+  const cand = new RTCIceCandidate(msg.candidate);
+  if (!call.pc || !call.pc.remoteDescription || !call.pc.remoteDescription.type){ call.pendingIce.push(cand); return; }
+  try{ await call.pc.addIceCandidate(cand); }catch(e){}
+}
+function updateCallButtons(){
+  const m = $('#btnMute'); if (m){ m.classList.toggle('off', userSettings.micMuted); }
+  const d = $('#btnDeaf'); if (d){ d.classList.toggle('off', userSettings.headphoneMuted); }
+  const s = $('#btnShare'); if (s){ s.classList.toggle('on-green', call.sharing); }
+}
+function updateCallTimer(){
+  if (!call.startedAt) return;
+  const s = Math.floor((Date.now() - call.startedAt)/1000);
+  const m = Math.floor(s/60), sec = s%60;
+  const el = $('#callTimerText'); if (el) el.textContent = `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+function endCall(silent){
+  if (!call.active) return;
+  const peer = call.peer;
+  const dur = call.startedAt ? Math.floor((Date.now() - call.startedAt)/1000) : 0;
+  const answered = call.startedAt > 0;
+  clearInterval(call.ring); clearInterval(call.tick);
+  if (call.fpsRAF){ const v = $('#callRemoteVideo'); if (v && v.cancelVideoFrameCallback) try{ v.cancelVideoFrameCallback(call.fpsRAF); }catch(e){} call.fpsRAF = null; }
+  if (call.screenFpsRAF){ cancelAnimationFrame(call.screenFpsRAF); call.screenFpsRAF = null; }
+  call.ring = null; call.tick = null;
+  if (call.localStream) call.localStream.getTracks().forEach(t=>t.stop());
+  if (call.screenStream) call.screenStream.getTracks().forEach(t=>t.stop());
+  if (call.pc) try{ call.pc.close(); }catch(e){}
+  emit('rtc_end',{room:call.roomId,from:myUsername});
+  call.active = false; call.peer = null;
+  call.localStream = null; call.screenStream = null; call.pc = null;
+  call.startedAt = 0; call.roomId = null; call.pendingIce = [];
+  call.sharing = false;
+  $('#callOverlay').classList.remove('show','ringing');
+  $('#callScreen').classList.remove('show');
+  $('#callRemoteVideo').srcObject = null;
+  $('#callAvatarWrap').style.display = 'flex';
+  if (!silent) sndLeave();
+  if (peer && answered && dur > 2){
+    const mm = String(Math.floor(dur/60)).padStart(2,'0');
+    const ss = String(dur%60).padStart(2,'0');
+    appendMessage(convKeyDM(myUsername,peer.username),{
+      id:uid(),from:myUsername,sys:true,text:`📞 Звонок завершён · ${mm}:${ss}`,time:Date.now(),
+    });
+    if (state.activeConv === convKeyDM(myUsername,peer.username)) renderMessages();
+  }
+}
+$('#btnEnd').onclick = ()=> endCall(false);
+$('#btnMute').onclick = ()=>{
+  userSettings.micMuted = !userSettings.micMuted;
+  saveUserSettings();
+  if (call.localStream) call.localStream.getAudioTracks().forEach(t => t.enabled = !userSettings.micMuted);
+  updateCallButtons();
+  renderMe();
+  toast(t('mic'), userSettings.micMuted ? '🔴 Заглушён' : '🟢 Активен', userSettings.micMuted ? 'error':'success', 1500);
+};
+$('#btnDeaf').onclick = ()=>{
+  userSettings.headphoneMuted = !userSettings.headphoneMuted;
+  saveUserSettings(); updateCallButtons();
+  toast('Звук', userSettings.headphoneMuted ? '🔇 Выкл' : '🔊 Вкл', 'success', 1500);
+};
+$('#btnShare').onclick = async ()=>{
+  if (call.sharing){
+    if (call.screenStream){ call.screenStream.getTracks().forEach(t=>t.stop()); call.screenStream = null; }
+    call.sharing = false; updateCallButtons(); return;
+  }
+  const fps = userSettings.screenFps || 75;
+  try{
+    const constraints = {
+      video: { frameRate: { ideal: fps, max: fps }, cursor: 'motion' },
+      audio: false,
+    };
+    try{
+      constraints.video.width = { ideal: 1920 };
+      constraints.video.height = { ideal: 1080 };
+    }catch(e){}
+    call.screenStream = await navigator.mediaDevices.getDisplayMedia(constraints);
+    call.sharing = true; updateCallButtons();
+    const v = $('#callRemoteVideo');
+    $('#callScreen').classList.add('show');
+    $('#callAvatarWrap').style.display = 'none';
+    v.srcObject = call.screenStream;
+    let lastT = performance.now(), frames = 0;
+    const tick = ()=>{
+      frames++;
+      const now = performance.now();
+      if (now - lastT >= 1000){
+        const el = $('#callFpsBadge');
+        if (el) el.textContent = Math.round((frames*1000)/(now-lastT)) + ' FPS';
+        frames = 0; lastT = now;
+      }
+      if (v.requestVideoFrameCallback) call.screenFpsRAF = v.requestVideoFrameCallback(tick);
+      else call.screenFpsRAF = requestAnimationFrame(tick);
+    };
+    if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(tick);
+    else requestAnimationFrame(tick);
+    if (call.pc){
+      const sTrack = call.screenStream.getVideoTracks()[0];
+      const sender = call.pc.getSenders().find(s => s.track && s.track.kind === 'video');
+      if (sender) try{ await sender.replaceTrack(sTrack); }catch(e){ call.pc.addTrack(sTrack, call.screenStream); }
+      else call.pc.addTrack(sTrack, call.screenStream);
+      try{
+        const offer = await call.pc.createOffer();
+        await call.pc.setLocalDescription(offer);
+        emit('rtc_offer',{room:call.roomId,from:myUsername,sdp:offer});
+      }catch(e){}
+    }
+    call.screenStream.getVideoTracks()[0].onended = ()=> $('#btnShare').click();
+    toast('Демонстрация', `${fps} FPS · 1080p`, 'success', 2500);
+  }catch(e){
+    if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') toast('Ошибка', e.message, 'error');
+  }
+};
+onBus(msg=>{
+  if (!msg || !msg.type) return;
+  switch(msg.type){
+    case 'rtc_invite': if (msg.to === myUsername && msg.from !== myUsername) handleInvite(msg); break;
+    case 'rtc_offer': if (msg.to === myUsername || call.roomId === msg.room) handleOffer(msg); break;
+    case 'rtc_answer': if (msg.to === myUsername || call.roomId === msg.room) handleAnswer(msg); break;
+    case 'rtc_ice': if (call.roomId === msg.room) handleIce(msg); break;
+    case 'rtc_end': if (call.active && call.roomId === msg.room && msg.from !== myUsername) endCall(true); break;
+  }
+});
+
+/* REALTIME */
+onBus(msg=>{
+  if (!msg) return;
+  if (msg.type === 'new_message'){
+    if (state && state.activeConv === msg.convKey) renderMessages();
+    if (state && msg.convKey && msg.convKey.startsWith('dm:') && msg.convKey !== state.activeConv){
+      const ids = msg.convKey.slice(3).split('|');
+      if (ids.includes(myUsername)) sndMsg();
+    }
+  }
+  if (msg.type === 'friend_request' && msg.to === myUsername){ toast('Заявка','@'+msg.from,'success'); renderSidebar(); if (!state.activeConv && state.activeServer===null) renderMain(); }
+  if (msg.type === 'friend_added' && (msg.a === myUsername || msg.b === myUsername)){ renderSidebar(); renderMain(); }
+  if (msg.type === 'friend_removed' && (msg.a === myUsername || msg.b === myUsername)) renderSidebar();
+  if (msg.type === 'profile_update'){ renderSidebar(); if (state.activeConv) renderMessages(); }
+  if (msg.type === 'storage'){
+    if (msg.key === K.friends || msg.key === K.requests){ renderSidebar(); if (!state.activeConv) renderMain(); }
+    if (msg.key === K.presence){ renderSidebar(); }
+  }
+});
+
+/* NAV */
+$('#homeBtn').onclick = ()=>{ state.activeServer = null; state.activeConv = null; saveState(); render(); };
+$('#navFriends').onclick = ()=>{ state.activeServer = null; state.activeConv = null; saveState(); render(); };
+$('#meInfo').onclick = ()=> openProfilePopout(state.me);
+$('#meAvatarSlot').onclick = ()=> openProfileEditor();
+
+/* AUTH SCREENS */
+function showAuthScreen(view, data = {}){
+  const el = $('#authScreen');
+  el.classList.remove('hide');
+  $('#app').classList.add('hide');
+  if (view === 'login'){
+    el.innerHTML = `
+      <div class="auth-card">
+        <h2>${t('welcome_back')}</h2>
+        <p class="sub">${t('welcome_sub')}</p>
+        <label>${t('username')}</label>
+        <input id="lUser" placeholder="alex" autocomplete="username">
+        <label>${t('password')}</label>
+        <input id="lPass" type="password" placeholder="••••••••" autocomplete="current-password">
+        <div class="err-text" id="lErr"></div>
+        <button class="primary" id="loginBtn">${t('login')}</button>
+        <div class="switch">${t('no_account')} <a id="toRegister">${t('register')}</a></div>
+        ${langSwitchHTML()}
+      </div>`;
+    const submit = ()=>{
+      const u = sanitizeUsername($('#lUser').value);
+      const p = $('#lPass').value;
+      const err = $('#lErr');
+      if (!u || !p){ err.textContent = t('fill_fields'); return; }
+      const user = auth.users[u];
+      if (!user){ err.textContent = t('user_not_found'); return; }
+      if (!checkPw(p, user.password)){ err.textContent = t('wrong_password'); return; }
+      setSession(u); enterApp(u);
+    };
+    $('#loginBtn').onclick = submit;
+    $('#lUser').addEventListener('keydown', e => { if (e.key === 'Enter') $('#lPass').focus(); });
+    $('#lPass').addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+    $('#toRegister').onclick = ()=> showAuthScreen('register');
+    wireLangSwitch();
+    setTimeout(()=>$('#lUser').focus(), 100);
+  }
+  else if (view === 'register'){
+    el.innerHTML = `
+      <div class="auth-card">
+        <h2>${t('create_account')}</h2>
+        <p class="sub">${t('create_sub')}</p>
+        <label>${t('email')}</label>
+        <input id="rEmail" type="email" placeholder="you@example.com" autocomplete="email">
+        <label>${t('username')}</label>
+        <input id="rUser" placeholder="alex" autocomplete="username" maxlength="20">
+        <label>${t('display_name')}</label>
+        <input id="rName" placeholder="Александр" maxlength="24">
+        <label>${t('password')}</label>
+        <input id="rPass" type="password" placeholder="Минимум 6 символов" autocomplete="new-password">
+        <div class="err-text" id="rErr"></div>
+        <button class="primary" id="registerBtn">${t('continue')}</button>
+        <div class="switch">${t('have_account')} <a id="toLogin">${t('login')}</a></div>
+        ${langSwitchHTML()}
+      </div>`;
+    const submit = ()=>{
+      const email = $('#rEmail').value.trim();
+      const username = sanitizeUsername($('#rUser').value);
+      const displayName = $('#rName').value.trim();
+      const password = $('#rPass').value;
+      const err = $('#rErr');
+      if (!validEmail(email)){ err.textContent = t('invalid_email'); return; }
+      if (!validUsername(username)){ err.textContent = t('username_rule'); return; }
+      if (!displayName || displayName.length < 2){ err.textContent = t('name_short'); return; }
+      if (!password || password.length < 6){ err.textContent = t('password_short'); return; }
+      if (auth.users[username]){ err.textContent = t('user_taken'); return; }
+      if (Object.values(auth.users).some(u => u.email.toLowerCase() === email.toLowerCase())){ err.textContent = t('email_taken'); return; }
+      const code = String(Math.floor(100000 + Math.random()*900000));
+      auth.pending = {email,username,displayName,password,code,expiresAt:Date.now()+10*60*1000};
+      toast('Код', `<b>${esc(email)}</b><br><span style="font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:6px;color:#00a8fc;display:block;text-align:center;margin-top:10px">${code}</span>`, 'success', 60000);
+      showAuthScreen('verify', {email});
+    };
+    $('#registerBtn').onclick = submit;
+    const order = ['#rEmail','#rUser','#rName','#rPass'];
+    order.forEach((s,i)=>{ $(s).addEventListener('keydown', e=>{ if (e.key === 'Enter'){ if (i < order.length-1) $(order[i+1]).focus(); else submit(); } }); });
+    $('#toLogin').onclick = ()=> showAuthScreen('login');
+    wireLangSwitch();
+    setTimeout(()=>$('#rEmail').focus(), 100);
+  }
+  else if (view === 'verify'){
+    const email = data.email || auth.pending?.email || '';
+    el.innerHTML = `
+      <div class="auth-card">
+        <h2>${t('verification')}</h2>
+        <p class="sub">${t('verif_sub')} <b style="color:#f2f3f5">${esc(email)}</b></p>
+        <div class="code-inputs" id="codeWrap">
+          ${[0,1,2,3,4,5].map(i => `<input maxlength="1" inputmode="numeric">`).join('')}
+        </div>
+        <div class="err-text" id="vErr" style="text-align:center"></div>
+        <button class="primary" id="verifyBtn">${t('confirm')}</button>
+        <div class="switch"><a id="resendCode">${t('send_again')}</a> · <a id="backToReg">${t('back')}</a></div>
+      </div>`;
+    const inputs = $$('#codeWrap input');
+    setTimeout(()=>inputs[0].focus(), 100);
+    const submit = ()=>{
+      const entered = inputs.map(i=>i.value).join('');
+      const err = $('#vErr');
+      if (!auth.pending){ err.textContent = 'Сессия истекла'; return; }
+      if (Date.now() > auth.pending.expiresAt){ err.textContent = t('expired'); return; }
+      if (entered !== auth.pending.code){ err.textContent = t('incorrect_code'); return; }
+      const p = auth.pending;
+      const tag = String(Math.floor(Math.random()*9000)+1000);
+      const profile = defaultProfile(p.username, p.displayName);
+      auth.users[p.username] = Object.assign(profile, {
+        username:p.username, displayName:p.displayName, email:p.email,
+        password:hashPw(p.password), tag, createdAt:Date.now(),
+      });
+      saveAuth();
+      auth.pending = null;
+      toast('Готово','Аккаунт создан','success');
+      setSession(p.username);
+      enterApp(p.username);
+    };
+    inputs.forEach((inp,i)=>{
+      inp.addEventListener('input', ()=>{
+        inp.value = inp.value.replace(/\D/g,'').slice(0,1);
+        if (inp.value && i < 5) inputs[i+1].focus();
+        if (inputs.every(x => x.value)) submit();
+      });
+      inp.addEventListener('keydown', e=>{ if (e.key === 'Backspace' && !inp.value && i > 0) inputs[i-1].focus(); });
+    });
+    $('#verifyBtn').onclick = submit;
+    $('#backToReg').onclick = ()=>{ auth.pending = null; showAuthScreen('register'); };
+    $('#resendCode').onclick = ()=>{
+      if (!auth.pending) return;
+      auth.pending.code = String(Math.floor(100000 + Math.random()*900000));
+      auth.pending.expiresAt = Date.now() + 10*60*1000;
+      toast('Новый код', `<span style="font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:6px;color:#00a8fc;display:block;text-align:center">${auth.pending.code}</span>`, 'success', 40000);
+    };
+  }
+}
+function langSwitchHTML(){
+  return `<div class="lang-switch">
+    <button data-lang="ru" class="${LANG==='ru'?'active':''}">RU</button>
+    <button data-lang="en" class="${LANG==='en'?'active':''}">EN</button>
+    <button data-lang="uk" class="${LANG==='uk'?'active':''}">UK</button>
+  </div>`;
+}
+function wireLangSwitch(){
+  $$('#authScreen [data-lang]').forEach(b => { b.onclick = ()=> setLang(b.dataset.lang); });
+}
+function setLang(lang){
+  LANG = lang;
+  writeJSON(K.lang, {lang});
+  document.documentElement.lang = lang;
+  if (myUsername && state){
+    render();
+    if ($('#peOverlay').classList.contains('show')) renderProfileEditor();
+    if ($('#settingsOverlay').classList.contains('show')){ renderSettingsNav(); renderSettingsBody(); }
+  } else {
+    const isReg = !!$('#registerBtn');
+    const isVer = !!$('#verifyBtn');
+    showAuthScreen(isVer ? 'verify' : (isReg ? 'register' : 'login'), {email: auth.pending?.email});
+  }
+}
+
+/* ENTER APP */
+function enterApp(username){
+  myUsername = username;
+  loadStateFor(username);
+  state.activeServer = null;
+  state.activeConv = null;
+  $('#authScreen').classList.add('hide');
+  $('#app').classList.remove('hide');
+  updatePresence();
+  startPresenceTimer();
+  render();
+}
+
+/* INIT */
+(function init(){
+  const langSaved = readJSON(K.lang, null);
+  LANG = langSaved?.lang || 'ru';
+  document.documentElement.lang = LANG;
+  loadUserSettings();
+  loadAuth();
+  const sess = getSession();
+  if (sess && auth.users[sess]) enterApp(sess);
+  else { clearSession(); showAuthScreen('login'); }
+})();
+
+window.addEventListener('beforeunload', ()=>{ if (state) saveState(); if (call.active) endCall(true); });
+</script>
+</body>
+</html>
